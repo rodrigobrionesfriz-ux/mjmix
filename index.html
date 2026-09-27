@@ -416,7 +416,6 @@ function ensureCtx() {
     initScratch();
     buildFx(); applyXfader(); applyFx();
     buildSamples().then(b => { samples = b; });
-    try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {}
   }
   if (ctx.state !== 'running') ctx.resume();
   return ctx;
@@ -654,6 +653,10 @@ class Deck {
     this.pf.set(.5, true);
     this.peaks = computePeaks(buf);
     layout(); refresh(this); renderLib();
+    if (!meta.restore) {
+      if (this.libId == null) sput('blob-' + this.id, { blob: file, name }); else sdel('blob-' + this.id);
+      setTimeout(saveSession, 500);
+    }
     this.onset = null;
     analyze(buf).then(r => {
       if (this.buffer !== buf) return;
@@ -845,15 +848,19 @@ const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const norm = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 function db() {
   return dbp || (dbp = new Promise((res, rej) => {
-    const r = indexedDB.open('appdj', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+    const r = indexedDB.open('appdj', 2);
+    r.onupgradeneeded = () => {
+      const x = r.result;
+      if (!x.objectStoreNames.contains('tracks')) x.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+      if (!x.objectStoreNames.contains('session')) x.createObjectStore('session');
+    };
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   }));
 }
-async function tx(mode, fn) {
+async function tx(mode, fn, store = 'tracks') {
   const d = await db();
   return new Promise((res, rej) => {
-    const t = d.transaction('tracks', mode), req = fn(t.objectStore('tracks'));
+    const t = d.transaction(store, mode), req = fn(t.objectStore(store));
     t.oncomplete = () => res(req ? req.result : undefined);
     t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
   });
@@ -1038,9 +1045,113 @@ function renderAm() {
 
 let wakeLock = null;
 async function keepAwake() {
+  setTimeout(updateMedia, 0);
   try { if (!wakeLock && 'wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && decks.some(d => d.playing)) keepAwake(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') { if (ctx && ctx.state !== 'running') ctx.resume(); if (decks.some(d => d.playing)) keepAwake(); }
+  else saveSession();
+});
+window.addEventListener('pagehide', () => saveSession());
+
+/* =================== Sesión: recuperar las pistas al volver a abrir =================== */
+const sget = k => tx('readonly', st => st.get(k), 'session');
+const sput = (k, v) => tx('readwrite', st => st.put(v, k), 'session').catch(() => {});
+const sdel = k => tx('readwrite', st => st.delete(k), 'session').catch(() => {});
+let restoring = false;
+function snapDeck(d) {
+  const b = { eq: { ...d.eq }, vol: d.vol, vinyl: d.vinyl };
+  if (!d.buffer) return b;
+  return Object.assign(b, { loaded: true, libId: d.libId, name: d.name, pos: d.pos(), cue: d.cue, hot: d.hot.slice(),
+    pitch: d.pitch, range: d.range, loopBeats: d.loopBeats, mode: d.mode });
+}
+function saveSession() {
+  if (restoring) return;
+  sput('state', { A: snapDeck(decks[0]), B: snapDeck(decks[1]), xval, fx: { type: fxS.type, beat: fxS.beat, ch: fxS.ch } });
+}
+async function restoreSession() {
+  let st; try { st = await sget('state'); } catch (e) { return; }
+  if (!st) return;
+  restoring = true;
+  let n = 0;
+  try {
+    ensureCtx();
+    for (const d of decks) {
+      const sn = st[d.id]; if (!sn) continue;
+      for (const k in sn.eq) if (d.knobs[k]) d.knobs[k].set(sn.eq[k]);
+      if (sn.vol != null) d.chf.set(sn.vol);
+      if (sn.vinyl === false) { d.vinyl = false; const vb = $(`.deck[data-deck="${d.id}"] .vinyl`); vb.classList.remove('on'); vb.setAttribute('aria-pressed', 'false'); }
+      if (!sn.loaded) continue;
+      let blob = null, meta = null;
+      if (sn.libId != null) { const t = lib.find(x => x.id === sn.libId); if (t) { blob = t.blob; meta = { name: t.name, libId: t.id, bpm: t.bpm, duration: t.duration }; } }
+      if (!blob) { const b = await sget('blob-' + d.id).catch(() => null); if (b) { blob = b.blob; meta = { name: b.name }; } }
+      if (!blob) continue;
+      meta.restore = true;
+      if (!await d.load(blob, meta)) continue;
+      Object.assign(d, { cue: sn.cue || 0, hot: sn.hot || Array(8).fill(null), range: sn.range || .08, pitch: sn.pitch || 0,
+        loopBeats: sn.loopBeats || 4, mode: sn.mode || 'hot' });
+      d.pf.set(.5 + d.pitch / (2 * d.range), true); d.seek(sn.pos || 0); d.updateRate(); refresh(d);
+      n++;
+    }
+    if (st.xval != null) xfc.set(st.xval);
+    if (st.fx) { Object.assign(fxS, st.fx); applyFx(); }
+  } catch (e) {}
+  restoring = false;
+  if (n) toast(n === 1 ? 'Recuperé la pista de tu sesión anterior' : 'Recuperé las pistas de tu sesión anterior');
+}
+setInterval(saveSession, 3000);
+
+/* =================== Segundo plano: controles del sistema y audio activo =================== */
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}   // iPhone: sigue sonando con pantalla bloqueada y modo silencio
+function silentWav(sec = 10, sr = 8000) {
+  const n = sec * sr, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+  new Uint8Array(buf, 44).fill(128);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+// Un audio silencioso en bucle mantiene la app como "reproduciendo" para que el sistema no la pause
+const keep = new Audio(silentWav()); keep.loop = true; keep.setAttribute('playsinline', '');
+let keepOwnPause = false, lastPlaying = [], mediaTitle = '';
+keep.addEventListener('pause', () => {
+  if (keepOwnPause) { keepOwnPause = false; return; }
+  const live = decks.filter(d => d.playing);                    // el sistema quitó el audio (llamada, otra app)
+  if (live.length) { lastPlaying = live; live.forEach(d => { d.pause(); refresh(d); }); }
+});
+function updateMedia() {
+  const live = decks.filter(d => d.playing || d.scratching);
+  if (live.length) {
+    if (keep.paused) keep.play().catch(() => {});
+    const title = live.map(d => d.name).join(' + ');
+    if ('mediaSession' in navigator && title !== mediaTitle) {
+      mediaTitle = title;
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'App DJ', artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] }); } catch (e) {}
+    }
+  } else if (!keep.paused) { keepOwnPause = true; keep.pause(); }
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = live.length ? 'playing' : 'paused';
+}
+if ('mediaSession' in navigator) {
+  const ms = navigator.mediaSession, h = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
+  h('pause', () => { lastPlaying = decks.filter(d => d.playing); lastPlaying.forEach(d => { d.pause(); refresh(d); }); updateMedia(); });
+  h('play', () => {
+    ensureCtx();
+    const list = lastPlaying.length ? lastPlaying : [am.cur || decks.find(d => d.buffer)].filter(Boolean);
+    list.forEach(d => { if (d.buffer) { d.play(); refresh(d); } }); updateMedia();
+  });
+  h('nexttrack', () => { if (am.on && am.nextReady && !am.mix) am.now = true; });
+}
+setInterval(updateMedia, 1000);
+
+/* =================== Pantalla completa =================== */
+function lockLandscape() { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} }
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest && e.target.closest('.load, .libdir, .libfiles')) return;   // no interrumpir el selector de archivos
+  const el = document.documentElement;
+  if (matchMedia('(display-mode: fullscreen)').matches || document.fullscreenElement || !el.requestFullscreen) { lockLandscape(); return; }
+  el.requestFullscreen({ navigationUI: 'hide' }).then(lockLandscape).catch(() => {});
+}, { capture: true });
 
 /* =================== Controles =================== */
 function fader(el, { vertical, def, onChange }) {
@@ -1460,7 +1571,7 @@ function wire(d) {
   const strip = $(`.strip[data-deck="${d.id}"]`); strip.innerHTML = stripHTML();
   d.knobs = {};
   $$('.knob', strip).forEach(k => { d.knobs[k.dataset.k] = knob(k, .5, v => { d.eq[k.dataset.k] = v; k.dataset.k === 'filt' ? d.applyFilter() : d.applyEq(); }); });
-  fader($(`.cf[data-deck="${d.id}"]`), { vertical: true, def: .9, onChange: v => { d.vol = v; d.applyVol(); } });
+  d.chf = fader($(`.cf[data-deck="${d.id}"]`), { vertical: true, def: .9, onChange: v => { d.vol = v; d.applyVol(); } });
 }
 
 /* =================== Arranque =================== */
@@ -1516,7 +1627,7 @@ $$('.smp .btn').forEach(b => b.addEventListener('click', () => {
   const d = decks.find(x => x.id === b.dataset.deck);
   d.mode = 'smp'; refresh(d); if (d.tab !== 'pads') openTab(d, 'pads');
 }));
-libLoad();
+libLoad().then(restoreSession);
 
 new ResizeObserver(layout).observe($('.app'));
 layout();

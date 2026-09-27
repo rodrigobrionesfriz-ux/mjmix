@@ -62,7 +62,12 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 - **Sampler**: volumen de los sonidos del sampler.
 - Doble toque en cualquier fader o perilla lo devuelve a su posición inicial.
 
+## Pantalla completa, sesión y segundo plano
+
+- **Pantalla completa:** instalada en Android se abre sin barras del sistema. En el navegador entra a pantalla completa al primer toque. En iPhone no existe pantalla completa para apps web; instalada desde Safari se ve sin la barra del navegador, pero con la barra de estado.
+- **Sesión:** al salir se guardan las pistas cargadas, su posición, cue, hot cues, pitch, EQ, volúmenes y crossfader. Al volver a abrir, todo aparece en pausa donde quedó.
+- **Segundo plano:** la música sigue sonando con la pantalla apagada o usando otra app, y aparece un control en la barra de notificaciones y la pantalla de bloqueo para pausar o seguir (con Automix activo, "siguiente" adelanta la mezcla). Si entra una llamada, la app pausa sola.
+
 ## Notas
 
-- En iPhone, si el interruptor de silencio está activado puede que no suene.
 - Si cambias íconos o el manifest, sube el número de versión en `sw.js` (`appdj-v1` → `appdj-v2`).
