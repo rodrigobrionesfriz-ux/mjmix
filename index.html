@@ -37,10 +37,10 @@ button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-of
 
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;gap:6px;padding:6px}
 
-/* Formas de onda */
-.waves{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 6px}
-.wrow{--c:var(--a);grid-column:1;display:grid;grid-template-columns:1fr auto;gap:6px}
-.side{grid-column:2;grid-row:1/3;width:70px;display:grid;grid-template-rows:1fr 1fr;gap:4px}
+/* Barra superior: forma de onda de cada deck y botones centrales */
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px}
+.wrow{--c:var(--a);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;min-width:0}
+.side{width:clamp(128px,17vw,190px);display:grid;grid-template-rows:1fr 1fr;gap:4px}
 .side .btn{font-size:11px;font-weight:600}
 .ambtn.on{background:var(--fx);color:var(--bg);border-color:transparent}
 .btn[hidden]{display:none}
@@ -87,7 +87,7 @@ button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-of
 .acts .btn{height:38px;padding:0 16px;font-size:13px}
 .acts .ok{background:var(--a);color:var(--bg);border-color:transparent}
 .wrow[data-deck="B"]{--c:var(--b)}
-.wbox{display:grid;grid-template-rows:1fr 6px;gap:2px;height:clamp(40px,11vh,96px);min-width:0}
+.wbox{display:grid;grid-template-rows:1fr 6px;gap:2px;height:clamp(44px,13vh,92px);min-width:0}
 .wave{position:relative;background:var(--well);border-radius:6px;overflow:hidden;touch-action:none;border-left:3px solid var(--c)}
 .winfo{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
   padding:2px 7px;font-size:11px;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.8)}
@@ -100,44 +100,69 @@ button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-of
 .hint[hidden],.ov-head[hidden]{display:none}
 .overview{position:relative;background:var(--well);border-radius:3px;overflow:hidden;touch-action:none}
 .ov-head{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);left:0}
-.load{padding:0 12px;font-size:12px}
+.load{padding:0 8px;font-size:11px}
 canvas{display:block;width:100%;height:100%}
 
-/* Cuerpo del controlador */
-.body{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;min-height:0}
+/* Cuerpo: deck, mixer angosto, deck */
+.body{display:grid;grid-template-columns:minmax(0,1fr) clamp(128px,17vw,190px) minmax(0,1fr);gap:6px;min-height:0}
 .deck{--c:var(--a);background:var(--panel);border-radius:12px;padding:6px;display:grid;
-  grid-template-columns:40px minmax(0,1fr);gap:6px;min-height:0;min-width:0}
-.deck[data-deck="B"]{--c:var(--b);grid-template-columns:minmax(0,1fr) 40px}
+  grid-template-columns:44px minmax(0,1fr);gap:6px;min-height:0;min-width:0}
+.deck[data-deck="B"]{--c:var(--b);grid-template-columns:minmax(0,1fr) 44px}
 .deck[data-deck="B"] .tempo{order:2}
-.vinyl{width:38px;height:24px;font-size:10px}
-.vinyl.on{background:var(--c);color:var(--bg);border-color:transparent}
-.jog.touch{border-color:var(--c)}
-.tempo{display:grid;grid-template-rows:auto auto 1fr auto auto;justify-items:center;gap:4px;min-height:0}
+.tempo{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;justify-items:center;gap:5px;min-height:0}
 .range{font-size:10px;color:var(--dim);padding:2px 4px;border:1px solid var(--line);border-radius:5px}
 .pv{font-size:9px;color:var(--dim);font-variant-numeric:tabular-nums}
-.sync{width:38px;height:clamp(26px,7vh,40px);font-size:10px}
-.main{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:5px;min-height:0;min-width:0}
-.loops{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-.loops .btn{height:clamp(24px,6.5vh,40px)}
-.loops .btn.on{background:var(--c);color:var(--bg)}
-.jogwrap{min-height:0;display:grid;place-items:center}
-.jog{position:relative;height:100%;max-width:100%;aspect-ratio:1;border-radius:50%;
-  background:#1a1f2d;border:2px solid var(--line);touch-action:none;box-shadow:inset 0 0 0 3px var(--well)}
+.sync,.cue{width:42px;height:clamp(28px,8vh,44px);font-size:11px}
+.sync{border:1.5px solid var(--c);color:var(--c)}
+.sync.on{background:var(--c);color:var(--bg)}
+.cue.on{border-color:var(--ink)}
+.main{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:6px;min-height:0;min-width:0}
+.stage{position:relative;min-height:0}
+.jogwrap{position:absolute;inset:0;display:grid;place-items:center}
+.jog{position:relative;height:100%;max-width:100%;aspect-ratio:1;border-radius:50%;background:#1a1f2d;touch-action:none;
+  border:3px solid color-mix(in srgb,var(--c) 45%,var(--line));
+  box-shadow:0 0 0 4px var(--well),0 0 22px color-mix(in srgb,var(--c) 22%,transparent)}
+.jog.touch{border-color:var(--c)}
 .platter{position:absolute;inset:4px;border-radius:50%;
   background:repeating-radial-gradient(circle,transparent 0 3px,rgba(255,255,255,.035) 3px 4px)}
-.mark{position:absolute;left:50%;top:3%;width:4px;height:20%;margin-left:-2px;border-radius:2px;background:var(--c)}
-.jog-center{position:absolute;inset:34%;border-radius:50%;background:var(--panel2);border:1px solid var(--line);
-  display:grid;place-items:center;font-weight:700;color:var(--c);font-size:clamp(12px,3vh,22px)}
-.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.modes .btn{height:clamp(20px,5.5vh,34px);font-size:10px;font-weight:500;color:var(--dim)}
-.modes .btn.on{background:var(--m);color:var(--bg);font-weight:700}
-.perf{display:grid;grid-template-columns:44px 1fr;gap:5px}
-.tp{display:grid;grid-template-rows:1fr 1fr;gap:4px}
-.tp .btn{font-size:11px;border-radius:10px}
-.play svg{width:18px;height:18px;fill:currentColor}
+.mark{position:absolute;left:50%;top:3%;width:4px;height:18%;margin-left:-2px;border-radius:2px;background:var(--c)}
+.jog-center{position:absolute;inset:31%;border-radius:50%;background:var(--well);border:1px solid var(--line);
+  display:grid;place-items:center;align-content:center;pointer-events:none;line-height:1}
+.jog-center .bp{font-size:clamp(14px,5.5vh,32px);font-weight:700;font-variant-numeric:tabular-nums}
+.jog-center small{font-size:clamp(8px,2vh,12px);color:var(--dim);margin-top:3px}
+.corner{position:absolute;z-index:2;height:28px;padding:0 7px;font-size:10px}
+.tl{top:0;left:0} .bl{bottom:0;left:0} .br{bottom:0;right:0}
+.nudge{width:34px;height:34px;padding:0;border-radius:50%;font-size:17px}
+.vinyl.on{background:var(--c);color:var(--bg);border-color:transparent}
+.panel{position:absolute;inset:0;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:6px;display:grid;grid-template-rows:minmax(0,1fr);overflow:auto}
+.panel[hidden],.pane[hidden]{display:none}
+.pane{display:grid;gap:6px;align-content:center;min-height:0}
+.pane[data-tab="pads"]{grid-template-rows:auto minmax(0,1fr);align-content:stretch}
+.pane[data-tab="pads"] .pads{grid-auto-rows:auto;grid-template-rows:1fr 1fr}
+.pane[data-tab="loop"]{grid-template-rows:1fr 1fr 1fr;align-content:stretch}
+.pane[data-tab="loop"] .loops .btn{height:100%}
+.pane[data-tab="loop"] .lsizes{grid-row:2/4;grid-template-rows:1fr 1fr}
+.pane[data-tab="loop"] .lsizes .btn{height:100%}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;height:clamp(34px,10vh,52px)}
+.deck[data-deck="B"] .bar{grid-template-columns:minmax(0,1fr) auto}
+.deck[data-deck="B"] .bar .play{order:2}
+.play{width:clamp(52px,9vw,84px);border-radius:10px}
+.play svg{width:20px;height:20px;fill:currentColor}
 .play.on{background:var(--c);color:var(--bg);border-color:transparent}
-.cue.on{border-color:var(--ink)}
-.pads{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:clamp(30px,9vh,66px);gap:4px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tabs .btn{font-size:11px;color:var(--dim)}
+.tabs .btn.on{background:var(--c);color:var(--bg);border-color:transparent}
+.loops{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.loops .btn{height:clamp(30px,9vh,48px);font-size:12px}
+.loops .btn.on{background:var(--c);color:var(--bg)}
+.lsizes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.lsizes .btn{height:clamp(28px,8vh,44px);font-size:12px;font-weight:500}
+.lsizes .btn.on{background:var(--panel2);border:1.5px solid var(--c);color:var(--c)}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.modes .btn{height:clamp(22px,6vh,34px);font-size:10px;font-weight:500;color:var(--dim)}
+.modes .btn.on{background:var(--m);color:var(--bg);font-weight:700}
+.pads{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:clamp(30px,10vh,64px);gap:4px}
 .pad{overflow:hidden;border-radius:6px;background:var(--panel2);border:1.5px solid color-mix(in srgb,var(--pc) 50%,transparent);
   font-size:9.5px;line-height:1.1;color:var(--dim);display:grid;place-items:center;text-align:center;touch-action:none}
 .pad.set{background:color-mix(in srgb,var(--pc) 32%,var(--panel2));color:var(--ink);font-weight:600}
@@ -162,32 +187,39 @@ canvas{display:block;width:100%;height:100%}
 .knob::after{content:"";position:absolute;left:50%;top:3px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;
   background:var(--kc,var(--ink));transform-origin:50% 11px;transform:rotate(var(--r,0deg))}
 
-/* Mixer */
-.mixer{background:var(--panel);border-radius:12px;padding:6px 8px;display:grid;
-  grid-template-columns:auto auto auto;grid-template-rows:auto minmax(0,1fr) auto;
-  grid-template-areas:"sa fx sb" "fa mt fb" "xf xf xf";gap:6px 8px;min-height:0}
-.strip{display:grid;grid-template-columns:repeat(2,auto);gap:2px 6px;align-content:start}
-.strip .filt{grid-column:1/-1}
-.strip[data-deck="A"]{grid-area:sa} .strip[data-deck="A"] .knob{--kc:var(--a)}
-.strip[data-deck="B"]{grid-area:sb} .strip[data-deck="B"] .knob{--kc:var(--b)}
-.fxp{grid-area:fx;display:grid;gap:4px;align-content:start;width:104px}
-.fxrow{display:grid;grid-template-columns:22px 1fr 22px;gap:3px;align-items:center;height:22px}
-.fxrow .btn{height:22px;font-size:10px}
-.fxrow span{text-align:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
-.seg{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:3px;height:22px}
-.seg .btn{font-size:9.5px;font-weight:500}
+/* EQ y efectos dentro de los paneles del deck */
+.pane .strip{display:flex;flex-wrap:wrap;justify-content:space-around;align-items:center;gap:8px}
+.pane .knob{width:44px;height:44px}
+.pane .knob::after{top:4px;height:13px;transform-origin:50% 18px}
+.pane .knob-wrap{font-size:10px;gap:3px}
+.strip[data-deck="A"] .knob{--kc:var(--a)} .strip[data-deck="B"] .knob{--kc:var(--b)}
+.fxhome{display:none}
+.fxp{display:grid;gap:6px;width:100%;max-width:300px;margin:0 auto}
+.fxrow{display:grid;grid-template-columns:34px 1fr 34px;gap:4px;align-items:center;height:30px}
+.fxrow .btn{height:30px;font-size:12px}
+.fxrow span{text-align:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:4px;height:30px}
+.seg .btn{font-size:11px;font-weight:500}
 .fxk{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;justify-items:center}
 .fxk .knob{--kc:var(--fx)}
-.fxon{width:30px;height:28px;margin-bottom:10px;font-size:10px}
+.fxon{width:46px;height:34px;margin-bottom:15px;font-size:12px}
 .fxon.on{background:var(--fx)}
+
+/* Mixer */
+.mixer{background:var(--panel);border-radius:12px;padding:8px;display:grid;
+  grid-template-columns:1fr auto 1fr;grid-template-rows:minmax(0,1fr) auto auto;
+  grid-template-areas:"fa mt fb" "sm sm sm" "xf xf xf";gap:8px 6px;min-height:0}
 .cf{justify-self:center;height:100%;min-height:0}
 .cf[data-deck="A"]{grid-area:fa;--thumb:var(--a)}
 .cf[data-deck="B"]{grid-area:fb;--thumb:var(--b)}
-.meters{grid-area:mt;display:flex;justify-content:center;gap:6px}
-.meter{position:relative;width:6px;background:var(--well);border-radius:3px;overflow:hidden}
+.meters{grid-area:mt;display:flex;justify-content:center;gap:5px}
+.meter{position:relative;width:7px;background:var(--well);border-radius:3px;overflow:hidden}
 .meter i{position:absolute;inset:0;transform-origin:bottom;transform:scaleY(0);
   background:linear-gradient(to top,#58c47a 0 65%,#ffd23f 65% 85%,#ff5a4f 85%)}
-.xrow{grid-area:xf;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;font-weight:700;font-size:13px}
+.smp{grid-area:sm;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.smp .btn{height:clamp(26px,7vh,38px);font-size:10px}
+.smp .btn[data-deck="A"]{color:var(--a)} .smp .btn[data-deck="B"]{color:var(--b)}
+.xrow{grid-area:xf;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px;font-weight:700;font-size:12px}
 .xrow .la{color:var(--a)} .xrow .lb{color:var(--b)}
 
 .toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);
@@ -207,39 +239,39 @@ canvas{display:block;width:100%;height:100%}
 </head>
 <body>
 <main class="app">
-  <section class="waves">
+  <header class="top">
     <div class="wrow" data-deck="A"></div>
-    <div class="wrow" data-deck="B"></div>
     <div class="side">
       <button class="btn libbtn" aria-label="Abrir biblioteca">Biblioteca</button>
       <button class="btn ambtn" aria-label="Automix">Automix</button>
     </div>
-  </section>
+    <div class="wrow" data-deck="B"></div>
+  </header>
 
   <section class="body">
     <div class="deck" data-deck="A"></div>
-
     <div class="mixer" aria-label="Mixer">
-      <div class="strip" data-deck="A"></div>
-      <div class="fxp">
-        <div class="fxrow"><button class="btn fxprev" aria-label="Efecto anterior">◀</button><span class="fxname">Eco</span><button class="btn fxnext" aria-label="Efecto siguiente">▶</button></div>
-        <div class="fxrow"><button class="btn bdown" aria-label="Menos beats">−</button><span class="fxbeat">1 beat</span><button class="btn bup" aria-label="Más beats">+</button></div>
-        <div class="seg"><button class="btn" data-ch="A">A</button><button class="btn" data-ch="M">Master</button><button class="btn" data-ch="B">B</button></div>
-        <div class="fxk">
-          <label class="knob-wrap"><div class="knob fxlevel" tabindex="0"></div>Nivel</label>
-          <button class="btn fxon">On</button>
-          <label class="knob-wrap"><div class="knob smpvol" tabindex="0"></div>Sampler</label>
-        </div>
-      </div>
-      <div class="strip" data-deck="B"></div>
       <div class="fader v cf" data-deck="A" aria-label="Volumen A"></div>
       <div class="meters"><div class="meter" data-deck="A"><i></i></div><div class="meter" data-deck="B"><i></i></div></div>
       <div class="fader v cf" data-deck="B" aria-label="Volumen B"></div>
+      <div class="smp"><button class="btn" data-deck="A">Sampler</button><button class="btn" data-deck="B">Sampler</button></div>
       <div class="xrow"><span class="la">A</span><div class="fader h xf" aria-label="Crossfader"></div><span class="lb">B</span></div>
     </div>
-
     <div class="deck" data-deck="B"></div>
   </section>
+
+  <div class="fxhome">
+    <div class="fxp">
+      <div class="fxrow"><button class="btn fxprev" aria-label="Efecto anterior">◀</button><span class="fxname">Eco</span><button class="btn fxnext" aria-label="Efecto siguiente">▶</button></div>
+      <div class="fxrow"><button class="btn bdown" aria-label="Menos beats">−</button><span class="fxbeat">1 beat</span><button class="btn bup" aria-label="Más beats">+</button></div>
+      <div class="seg"><button class="btn" data-ch="A">A</button><button class="btn" data-ch="M">Master</button><button class="btn" data-ch="B">B</button></div>
+      <div class="fxk">
+        <label class="knob-wrap"><div class="knob fxlevel" tabindex="0"></div>Nivel</label>
+        <button class="btn fxon">On</button>
+        <label class="knob-wrap"><div class="knob smpvol" tabindex="0"></div>Sampler</label>
+      </div>
+    </div>
+  </div>
 </main>
 
 <section class="sheet" aria-label="Biblioteca">
@@ -1051,7 +1083,7 @@ function waveHTML(id) {
   return `<div class="wbox">
     <div class="wave"><canvas></canvas>
       <div class="winfo"><span class="l"><b>${id}</b><span class="t">Sin pista</span></span>
-        <span class="r"><span class="el">0:00</span><span class="rm">-0:00</span><span class="bp">-- BPM</span></span></div>
+        <span class="r"><span class="el">0:00</span><span class="rm">-0:00</span></span></div>
       <span class="hint">Toca Cargar para elegir una pista</span></div>
     <div class="overview"><canvas></canvas><i class="ov-head"></i></div></div>
   <button class="btn load" aria-label="Cargar pista en deck ${id}">Cargar</button>
@@ -1059,22 +1091,39 @@ function waveHTML(id) {
 }
 function deckHTML(id) {
   return `<div class="tempo">
-    <button class="btn vinyl on" aria-pressed="true" aria-label="Modo vinilo para scratch">Vinilo</button>
     <button class="range" aria-label="Rango de pitch">±8</button>
     <div class="fader v pf" aria-label="Pitch ${id}"></div>
     <span class="pv">+0,0%</span>
-    <button class="btn sync">Sync</button></div>
+    <button class="btn sync">Sync</button>
+    <button class="btn cue">Cue</button></div>
   <div class="main">
-    <div class="loops">
-      <button class="btn lin">In</button><button class="btn lout">Out</button>
-      <button class="btn lauto" aria-label="Loop automático">↻ 4</button>
-      <button class="btn lhalf" aria-label="Loop a la mitad">½</button><button class="btn ldbl" aria-label="Loop al doble">×2</button></div>
-    <div class="jogwrap"><div class="jog" aria-label="Jog ${id}"><div class="platter"><div class="mark"></div></div><div class="jog-center">${id}</div></div></div>
-    <div class="modes">${MODES.map(m => `<button class="btn" data-m="${m.k}" style="--m:${m.c}">${m.l}</button>`).join('')}</div>
-    <div class="perf">
-      <div class="tp"><button class="btn cue">Cue</button><button class="btn play" aria-label="Reproducir">${ICON_PLAY}</button></div>
-      <div class="pads">${Array.from({ length: 8 }, (_, i) => `<button class="pad" data-i="${i}"></button>`).join('')}</div>
-    </div></div>`;
+    <div class="stage">
+      <div class="jogwrap"><div class="jog" aria-label="Jog ${id}"><div class="platter"><div class="mark"></div></div>
+        <div class="jog-center"><b class="bp">--</b><small>BPM</small></div></div></div>
+      <button class="btn vinyl on corner tl" aria-pressed="true" aria-label="Modo vinilo para scratch">Vinilo</button>
+      <button class="btn corner nudge bl" data-n="-1" aria-label="Frenar">−</button>
+      <button class="btn corner nudge br" data-n="1" aria-label="Acelerar">+</button>
+      <div class="panel" hidden>
+        <div class="pane" data-tab="pads" hidden>
+          <div class="modes">${MODES.map(m => `<button class="btn" data-m="${m.k}" style="--m:${m.c}">${m.l}</button>`).join('')}</div>
+          <div class="pads">${Array.from({ length: 8 }, (_, i) => `<button class="pad" data-i="${i}"></button>`).join('')}</div>
+        </div>
+        <div class="pane" data-tab="loop" hidden>
+          <div class="loops">
+            <button class="btn lin">In</button><button class="btn lout">Out</button>
+            <button class="btn lauto" aria-label="Loop automático">↻ 4</button>
+            <button class="btn lhalf" aria-label="Loop a la mitad">½</button><button class="btn ldbl" aria-label="Loop al doble">×2</button></div>
+          <div class="lsizes">${[.25, .5, 1, 2, 4, 8, 16, 32].map(v => `<button class="btn" data-v="${v}">${frac(v)}</button>`).join('')}</div>
+        </div>
+        <div class="pane" data-tab="eq" hidden><div class="strip" data-deck="${id}"></div></div>
+        <div class="pane" data-tab="fx" hidden></div>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn play" aria-label="Reproducir">${ICON_PLAY}</button>
+      <div class="tabs"><button class="btn" data-tab="fx">FX</button><button class="btn" data-tab="eq">EQ</button><button class="btn" data-tab="loop">Loop</button><button class="btn" data-tab="pads">Pads</button></div>
+    </div>
+  </div>`;
 }
 function stripHTML() {
   return ['gain:Gain', 'high:Agudos', 'mid:Medios', 'low:Graves', 'filt:Filtro']
@@ -1086,6 +1135,20 @@ const fmtPitch = p => (p < 0 ? '−' : '+') + Math.abs(p * 100).toFixed(1).repla
 let toastTimer;
 function toast(msg) { const t = $('.toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
 
+function openTab(d, tab) {
+  if (d.tab === 'pads' && tab !== 'pads') [...d.held].forEach(i => padUp(d, i, d.el.pads[i]));
+  if (!tab || d.tab === tab) { d.tab = null; d.el.panel.hidden = true; }
+  else {
+    if (tab === 'fx') {
+      const o = other(d); if (o.tab === 'fx') openTab(o, null);
+      d.el.panes.find(p => p.dataset.tab === 'fx').appendChild($('.fxp'));
+    }
+    d.tab = tab; d.el.panel.hidden = false;
+    d.el.panes.forEach(p => { p.hidden = p.dataset.tab !== tab; });
+    $$('.btn, .pad, .fxname, .fxbeat', d.el.panel).forEach(fit);
+  }
+  d.el.tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === d.tab));
+}
 function renderPads(d) {
   d.el.pads.forEach((p, i) => {
     let label, color, set = false, lit = d.held.has(i);
@@ -1101,7 +1164,8 @@ function renderPads(d) {
 function refresh(d) {
   const e = d.el;
   e.title.textContent = d.name || 'Sin pista';
-  e.bp.textContent = (d.bpm ? (d.bpm * (1 + d.pitch)).toFixed(1).replace('.', ',') : (d.analyzing ? '…' : '--')) + ' BPM';
+  e.bp.textContent = d.bpm ? (d.bpm * (1 + d.pitch)).toFixed(1).replace('.', ',') : (d.analyzing ? '…' : '--');
+  if (e.lsizes) e.lsizes.forEach(b => b.classList.toggle('on', +b.dataset.v === d.loopBeats));
   if (e.play._on !== d.playing) {
     e.play._on = d.playing; e.play.innerHTML = d.playing ? ICON_PAUSE : ICON_PLAY;
     e.play.classList.toggle('on', d.playing); e.play.setAttribute('aria-label', d.playing ? 'Pausar' : 'Reproducir');
@@ -1257,7 +1321,7 @@ function wire(d) {
   const w = $(`.wrow[data-deck="${d.id}"]`), r = $(`.deck[data-deck="${d.id}"]`);
   w.innerHTML = waveHTML(d.id); r.innerHTML = deckHTML(d.id);
   d.el = {
-    title: $('.t', w), elT: $('.el', w), rm: $('.rm', w), bp: $('.bp', w), wave: $('.wave canvas', w),
+    title: $('.t', w), elT: $('.el', w), rm: $('.rm', w), bp: $('.bp', r), wave: $('.wave canvas', w),
     hint: $('.hint', w), ov: $('.overview canvas', w), ovh: $('.ov-head', w),
     platter: $('.platter', r), play: $('.play', r), cue: $('.cue', r), sync: $('.sync', r),
     range: $('.range', r), pv: $('.pv', r), lin: $('.lin', r), lauto: $('.lauto', r),
@@ -1349,6 +1413,25 @@ function wire(d) {
     jmode = null;
   };
   jog.addEventListener('pointerup', jogEnd); jog.addEventListener('pointercancel', jogEnd);
+  d.el.panel = $('.panel', r); d.el.panes = $$('.pane', r); d.el.tabs = $$('.tabs .btn', r);
+  d.el.lsizes = $$('.lsizes .btn', r); d.tab = null;
+  d.el.tabs.forEach(b => b.addEventListener('click', () => openTab(d, b.dataset.tab)));
+  d.el.lsizes.forEach(b => b.addEventListener('pointerdown', () => {
+    if (!d.buffer) { toast('Primero carga una pista'); return; }
+    const v = +b.dataset.v;
+    if (d.loop && d.loopBeats === v) d.exitLoop();
+    else { d.loopBeats = v; if (d.loop) { if (d.bpm) d.setLoop(d.loop.start, d.loop.start + d.beat() * v); } else d.autoLoop(); }
+    refresh(d);
+  }));
+  $$('.nudge', r).forEach(b => {
+    const n = +b.dataset.n, stop = () => { if (d.bend) { d.bend = 0; d.updateRate(); } };
+    b.addEventListener('pointerdown', e => {
+      if (!d.buffer) return;
+      b.setPointerCapture(e.pointerId);
+      if (d.playing) { d.bend = n * .04; d.updateRate(); } else d.seek(d.offset + n * .03);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, stop));
+  });
   const vb = $('.vinyl', r);
   vb.addEventListener('click', () => {
     d.vinyl = !d.vinyl; vb.classList.toggle('on', d.vinyl); vb.setAttribute('aria-pressed', d.vinyl);
@@ -1428,6 +1511,10 @@ $('.am-stop').addEventListener('click', () => { $('.am').classList.remove('open'
 $('.am-now').addEventListener('click', () => { am.now = true; $('.am').classList.remove('open'); });
 $$('.am .amseg .btn').forEach(b => b.addEventListener('click', () => {
   const k = b.parentElement.dataset.set; am[k] = k === 'beats' ? +b.dataset.v : b.dataset.v; renderAm();
+}));
+$$('.smp .btn').forEach(b => b.addEventListener('click', () => {
+  const d = decks.find(x => x.id === b.dataset.deck);
+  d.mode = 'smp'; refresh(d); if (d.tab !== 'pads') openTab(d, 'pads');
 }));
 libLoad();
 

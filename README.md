@@ -22,6 +22,13 @@ y abre `http://localhost:8000`. El service worker necesita `localhost` o HTTPS.
 
 La app se usa con el teléfono en horizontal. En tablet funciona en ambas posiciones.
 
+**Distribución**
+- Arriba: la forma de onda de cada deck sobre su lado, con Cargar, y al centro Biblioteca y Automix.
+- Cada deck tiene el jog grande al centro con el BPM, el pitch con Sync y Cue por el borde exterior, y abajo Play con las pestañas **FX, EQ, Loop y Pads**. Cada pestaña abre su panel sobre el jog; toca la misma pestaña para cerrarlo y volver al jog.
+- Los botones **−** y **+** junto al jog frenan o aceleran mientras los mantienes (para cuadrar a oído).
+- Al centro, el mixer: volumen de cada canal con medidores, botones Sampler (abren los pads de ese deck en modo sampler) y crossfader.
+- **FX** muestra el Beat FX, que es uno solo para toda la app: se abre en el deck donde lo pidas.
+
 **Deck**
 - **Cargar** (junto a cada forma de onda): muestra solo los formatos que tu teléfono puede reproducir (MP3, M4A, WAV y, según el equipo, AAC, FLAC u OGG). El BPM se calcula solo.
 - **Play / Cue**: Cue en pausa marca el punto; Cue sonando vuelve a ese punto y pausa. Doble toque en Cue lleva el tema al inicio.
