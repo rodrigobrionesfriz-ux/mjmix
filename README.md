@@ -36,6 +36,13 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 - Los botones **A** y **B** de cada fila cargan el tema en ese deck. El botón se pinta cuando el tema está cargado ahí. El BPM se guarda la primera vez que lo cargas.
 - Si el deck está sonando, la app pregunta antes de cargar. Lo mismo pasa con el botón Cargar.
 
+**Automix**
+- El botón **Automix** (bajo Biblioteca) abre sus opciones: largo de la transición (8, 16 o 32 beats) y orden (Lista o Aleatorio). Toca Iniciar.
+- Usa los temas de la biblioteca. Si escribiste algo en el buscador, usa solo los que muestra la búsqueda, así puedes armar una lista rápida.
+- Si ya hay un tema sonando, sigue desde ahí; si no, parte con el primero en el deck A.
+- En cada cambio carga el siguiente tema en el deck libre, iguala el tempo, alinea los beats, mueve el crossfader y a la mitad intercambia los graves. Después el tempo vuelve de a poco al original del tema.
+- Mientras está activo, el mismo botón permite **Mezclar ahora** (adelanta el cambio) o **Detener**. Si pausas el deck que suena, Automix espera.
+
 **Modos de pads**
 - **Hot cue**: 8 puntos por deck. Toca para marcar o saltar; mantén presionado para borrar.
 - **Pad FX**: se activan mientras mantienes el pad. Roll de ½ a 1/16 de beat (al soltar la pista sigue donde habría ido), Eco, Filtro HP, Filtro LP y Freno.

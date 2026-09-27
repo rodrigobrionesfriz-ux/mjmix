@@ -40,8 +40,16 @@ button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-of
 /* Formas de onda */
 .waves{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 6px}
 .wrow{--c:var(--a);grid-column:1;display:grid;grid-template-columns:1fr auto;gap:6px}
-.libbtn{grid-column:2;grid-row:1/3;width:66px;display:grid;place-items:center;align-content:center;gap:4px;font-size:10px;font-weight:500}
-.libbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
+.side{grid-column:2;grid-row:1/3;width:70px;display:grid;grid-template-rows:1fr 1fr;gap:4px}
+.side .btn{font-size:11px;font-weight:600}
+.ambtn.on{background:var(--fx);color:var(--bg);border-color:transparent}
+.btn[hidden]{display:none}
+.amopt{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:8px;font-size:12px;color:var(--dim);margin-top:4px}
+.amseg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.amseg .btn{height:32px;font-size:12px;font-weight:500}
+.amseg .btn.on{background:var(--fx);color:var(--bg)}
+.am .acts{flex-wrap:wrap}
+.am .ok{background:var(--fx)}
 
 /* Biblioteca */
 .sheet{position:fixed;inset:0;z-index:15;background:var(--bg);display:none;grid-template-rows:auto auto 1fr;
@@ -182,7 +190,7 @@ canvas{display:block;width:100%;height:100%}
 .xrow{grid-area:xf;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;font-weight:700;font-size:13px}
 .xrow .la{color:var(--a)} .xrow .lb{color:var(--b)}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+.toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);
   background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;
   opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;z-index:30}
 .toast.show{opacity:1}
@@ -202,7 +210,10 @@ canvas{display:block;width:100%;height:100%}
   <section class="waves">
     <div class="wrow" data-deck="A"></div>
     <div class="wrow" data-deck="B"></div>
-    <button class="btn libbtn" aria-label="Abrir biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v14H4zM10 5h4v14h-4zM16.5 5.5l3.6 1-3.4 13-3.6-1z"/></svg>Biblioteca</button>
+    <div class="side">
+      <button class="btn libbtn" aria-label="Abrir biblioteca">Biblioteca</button>
+      <button class="btn ambtn" aria-label="Automix">Automix</button>
+    </div>
   </section>
 
   <section class="body">
@@ -249,6 +260,22 @@ canvas{display:block;width:100%;height:100%}
 <div class="modal" role="dialog" aria-modal="true">
   <div class="dlg"><h3></h3><p></p>
     <div class="acts"><button class="btn cancel">Cancelar</button><button class="btn ok">Aceptar</button></div></div>
+</div>
+<div class="modal am" role="dialog" aria-modal="true" aria-label="Automix">
+  <div class="dlg">
+    <h3>Automix</h3>
+    <p class="am-info"></p>
+    <div class="amopt"><span>Transición</span><div class="amseg" data-set="beats">
+      <button class="btn" data-v="8">8 beats</button><button class="btn" data-v="16">16 beats</button><button class="btn" data-v="32">32 beats</button></div></div>
+    <div class="amopt"><span>Orden</span><div class="amseg" data-set="order">
+      <button class="btn" data-v="list">Lista</button><button class="btn" data-v="shuffle">Aleatorio</button></div></div>
+    <div class="acts">
+      <button class="btn am-close">Cerrar</button>
+      <button class="btn am-stop">Detener</button>
+      <button class="btn am-now">Mezclar ahora</button>
+      <button class="btn ok am-start">Iniciar</button>
+    </div>
+  </div>
 </div>
 <div class="rotate">
   <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="14" width="32" height="20" rx="3"/><path d="M14 8a14 14 0 0 1 20 0M34 8l0 -4M34 8l-4 0"/></svg>
@@ -838,8 +865,7 @@ async function libRemove(id) {
 function renderLib() {
   const box = $('.list'); if (!box) return;
   $('.count').textContent = `${lib.length} ${lib.length === 1 ? 'tema' : 'temas'}`;
-  const q = norm($('.search').value.trim());
-  const rows = q ? lib.filter(t => norm(t.name + ' ' + t.folder).includes(q)) : lib;
+  const rows = libRows();
   if (!lib.length) { box.innerHTML = '<p class="empty">Tu biblioteca está vacía.<br>Usa Agregar carpeta o Agregar temas para sumar música del teléfono.</p>'; return; }
   if (!rows.length) { box.innerHTML = '<p class="empty">No hay temas que coincidan con la búsqueda.</p>'; return; }
   box.innerHTML = rows.map(t => `<div class="row" data-id="${t.id}">
@@ -855,6 +881,127 @@ async function loadFromLib(id, deckId) {
   if (!t || !d) return;
   const ok = await d.load(t.blob, { name: t.name, libId: t.id, bpm: t.bpm, duration: t.duration });
   if (ok) { $('.sheet').classList.remove('open'); toast(`«${t.name}» cargado en el deck ${deckId}`); }
+}
+
+function libRows() {
+  const q = norm($('.search').value.trim());
+  return q ? lib.filter(t => norm(t.name + ' ' + t.folder).includes(q)) : lib;
+}
+
+/* =================== Automix =================== */
+const am = { on: false, queue: [], i: 0, beats: 16, order: 'list', cur: null, next: null,
+  nextReady: false, last: false, mix: null, glide: null, now: false, timer: null };
+const other = d => decks.find(x => x !== d);
+function bounds(d) {            // dónde empieza y termina el audio real, sin silencios
+  if (d._bBuf === d.buffer) return d._b;
+  const pk = d.peaks, n = pk.length; let a = 0, e = n - 1;
+  while (a < n && pk[a] < .04) a++; while (e > 0 && pk[e] < .04) e--;
+  d._bBuf = d.buffer; d._b = { start: a / PPS, end: Math.min(d.duration, (e + 1) / PPS) };
+  return d._b;
+}
+async function amLoad(d) {
+  while (am.i < am.queue.length) {
+    const id = am.queue[am.i++], t = lib.find(x => x.id === id); if (!t) continue;
+    if (d.playing) d.pause();
+    if (await d.load(t.blob, { name: t.name, libId: t.id, bpm: t.bpm, duration: t.duration })) return true;
+  }
+  return false;
+}
+async function amPrepare() {
+  const n = am.next; am.nextReady = false; renderAm();
+  if (!await amLoad(n)) { am.last = true; renderAm(); return; }
+  if (!am.on) return;
+  const b = bounds(n); n.cue = b.start; n.seek(b.start);
+  am.nextReady = true; renderAm();
+}
+async function amStart() {
+  const rows = libRows();
+  if (!rows.length) { toast('Agrega temas a la biblioteca para usar Automix'); return; }
+  ensureCtx();
+  let ids = rows.map(t => t.id);
+  if (am.order === 'shuffle') for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  const live = decks.filter(d => d.playing);
+  let cur = live.length === 2 ? decks[xval < .5 ? 0 : 1] : live[0];
+  Object.assign(am, { on: true, queue: ids, i: 0, last: false, mix: null, glide: null, now: false });
+  if (cur) {
+    if (am.order === 'list' && ids.includes(cur.libId)) am.i = ids.indexOf(cur.libId) + 1;
+    else am.queue = ids.filter(id => id !== cur.libId);
+    if (other(cur).playing) other(cur).pause();
+  } else {
+    cur = decks[0];
+    if (!await amLoad(cur)) { am.on = false; toast('No pude cargar temas para Automix'); renderAm(); return; }
+    cur.seek(bounds(cur).start); cur.play();
+  }
+  am.cur = cur; am.next = other(cur);
+  xfc.set(cur.id === 'A' ? 0 : 1);
+  refresh(cur); keepAwake();
+  clearInterval(am.timer); am.timer = setInterval(amTick, 50);
+  toast('Automix activado');
+  amPrepare();
+}
+function amStop(msg) {
+  if (am.mix) decks.forEach(d => d.knobs.low.set(.5));
+  Object.assign(am, { on: false, mix: null, glide: null, now: false });
+  clearInterval(am.timer); renderAm();
+  if (msg) toast(msg);
+}
+function amStartMix() {
+  const c = am.cur, n = am.next, synced = !!(c.bpm && n.bpm);
+  am.now = false; am.glide = null;
+  if (synced) syncDeck(n, true);             // iguala tempo
+  n.knobs.low.set(0);                        // entra sin graves
+  n.play();
+  if (synced) syncDeck(n, true);             // alinea los beats ya sonando
+  refresh(n);
+  am.mix = { t0: ctx.currentTime, dur: synced ? am.beats * c.realBeat() : 8,
+    from: c.id === 'A' ? 0 : 1, to: n.id === 'A' ? 0 : 1, swapped: false };
+  toast(`Automix: entra «${n.name}»`); renderAm();
+}
+function amFinishMix() {
+  const c = am.cur, n = am.next;
+  xfc.set(am.mix.to); c.pause(); c.knobs.low.set(.5); n.knobs.low.set(.5);
+  refresh(c);
+  am.mix = null; am.cur = n; am.next = c;
+  if (n.pitch) am.glide = { d: n, from: n.pitch, t0: ctx.currentTime, dur: 24 };   // vuelve de a poco a su tempo original
+  if (am.last) { am.nextReady = false; renderAm(); return; }
+  amPrepare();
+}
+function amTick() {
+  if (!am.on || !ctx) return;
+  const c = am.cur, n = am.next, now = ctx.currentTime;
+  if (am.glide) {
+    const g = am.glide, k = clamp((now - g.t0) / g.dur, 0, 1);
+    g.d.pitch = g.from * (1 - k); g.d.pf.set(.5 + g.d.pitch / (2 * g.d.range), true); g.d.updateRate(); refresh(g.d);
+    if (k >= 1) am.glide = null;
+  }
+  if (am.mix) {
+    const m = am.mix, k = clamp((now - m.t0) / m.dur, 0, 1);
+    xfc.set(m.from + (m.to - m.from) * k);
+    if (!m.swapped && k >= .5) { m.swapped = true; c.knobs.low.set(0); n.knobs.low.set(.5); }
+    if (k >= 1 || !c.playing) amFinishMix();
+    return;
+  }
+  if (!c.buffer) return;
+  const ended = !c.playing && c.offset >= c.duration - .05;
+  if (!am.nextReady) { if (am.last && ended) amStop('Automix terminado: se acabó la lista'); return; }
+  if (ended) { amStartMix(); return; }
+  if (!c.playing) return;                      // pausado a mano: espera
+  const dur = (c.bpm && n.bpm) ? am.beats * c.realBeat() : 8;
+  const left = (bounds(c).end - c.pos()) / c.curRate;
+  if (am.now || left <= dur + .3) amStartMix();
+}
+function renderAm() {
+  $('.ambtn').classList.toggle('on', am.on);
+  const m = $('.am');
+  $$('.amseg', m).forEach(g => $$('.btn', g).forEach(b => b.classList.toggle('on', String(am[g.dataset.set]) === b.dataset.v)));
+  $('.am-start', m).hidden = am.on; $('.am-stop', m).hidden = !am.on;
+  $('.am-now', m).hidden = !am.on || !am.nextReady || !!am.mix;
+  const q = libRows().length;
+  $('.am-info', m).textContent = !am.on
+    ? `Mezcla sola ${q} ${q === 1 ? 'tema' : 'temas'} de la biblioteca${$('.search').value.trim() ? ' (los que muestra tu búsqueda)' : ''}: iguala el tempo, alinea los beats, cruza el crossfader e intercambia los graves.`
+    : am.mix ? `Mezclando hacia «${am.next.name}».`
+    : `Sonando: «${am.cur ? am.cur.name : '--'}». ` + (am.nextReady ? `Siguiente: «${am.next.name}».` : am.last ? 'Es el último tema de la lista.' : 'Preparando el siguiente…');
+  fitAll();
 }
 
 let wakeLock = null;
@@ -896,6 +1043,7 @@ function knob(el, def, onChange) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') set(v - .05);
   });
   set(def);
+  return { set, get: () => v };
 }
 
 /* =================== Interfaz =================== */
@@ -1043,7 +1191,7 @@ function fit(el) {
 }
 function fitAll() { $$('.btn, .pad, .fxname, .fxbeat, .range, .pv').forEach(fit); }
 
-function syncDeck(d) {
+function syncDeck(d, quiet) {
   const o = decks.find(x => x !== d);
   if (!d.bpm || !o.bpm) { toast(d.analyzing || o.analyzing ? 'Analizando BPM, prueba en un momento' : 'Sync necesita que ambos decks tengan BPM'); return; }
   let ratio = o.bpm * (1 + o.pitch) / d.bpm;
@@ -1064,7 +1212,9 @@ function syncDeck(d) {
       msg = 'Tempo y beats alineados';
     }
   }
-  refresh(d); toast(msg);
+  refresh(d);
+  if (quiet) return;
+  toast(msg);
   d.el.sync.classList.add('on'); setTimeout(() => d.el.sync.classList.remove('on'), 250);
 }
 
@@ -1225,14 +1375,15 @@ function wire(d) {
 
   // Canal del mixer
   const strip = $(`.strip[data-deck="${d.id}"]`); strip.innerHTML = stripHTML();
-  $$('.knob', strip).forEach(k => knob(k, .5, v => { d.eq[k.dataset.k] = v; k.dataset.k === 'filt' ? d.applyFilter() : d.applyEq(); }));
+  d.knobs = {};
+  $$('.knob', strip).forEach(k => { d.knobs[k.dataset.k] = knob(k, .5, v => { d.eq[k.dataset.k] = v; k.dataset.k === 'filt' ? d.applyFilter() : d.applyEq(); }); });
   fader($(`.cf[data-deck="${d.id}"]`), { vertical: true, def: .9, onChange: v => { d.vol = v; d.applyVol(); } });
 }
 
 /* =================== Arranque =================== */
 const decks = [new Deck('A'), new Deck('B')];
 decks.forEach(d => { wire(d); refresh(d); });
-fader($('.xf'), { vertical: false, def: .5, onChange: v => { xval = v; applyXfader(); } });
+const xfc = fader($('.xf'), { vertical: false, def: .5, onChange: v => { xval = v; applyXfader(); } });
 
 $('.fxprev').addEventListener('click', () => { fxS.type = (fxS.type + FX_TYPES.length - 1) % FX_TYPES.length; applyFx(); });
 $('.fxnext').addEventListener('click', () => { fxS.type = (fxS.type + 1) % FX_TYPES.length; applyFx(); });
@@ -1269,6 +1420,15 @@ $('.modal .ok').addEventListener('click', () => closeAsk(true));
 $('.modal .cancel').addEventListener('click', () => closeAsk(false));
 $('.modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAsk(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && askResolve) closeAsk(false); });
+$('.ambtn').addEventListener('click', () => { renderAm(); $('.am').classList.add('open'); });
+$('.am-close').addEventListener('click', () => $('.am').classList.remove('open'));
+$('.am').addEventListener('click', e => { if (e.target === e.currentTarget) $('.am').classList.remove('open'); });
+$('.am-start').addEventListener('click', () => { $('.am').classList.remove('open'); amStart(); });
+$('.am-stop').addEventListener('click', () => { $('.am').classList.remove('open'); amStop('Automix detenido'); });
+$('.am-now').addEventListener('click', () => { am.now = true; $('.am').classList.remove('open'); });
+$$('.am .amseg .btn').forEach(b => b.addEventListener('click', () => {
+  const k = b.parentElement.dataset.set; am[k] = k === 'beats' ? +b.dataset.v : b.dataset.v; renderAm();
+}));
 libLoad();
 
 new ResizeObserver(layout).observe($('.app'));
