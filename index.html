@@ -101,7 +101,10 @@ canvas{display:block;width:100%;height:100%}
   grid-template-columns:40px minmax(0,1fr);gap:6px;min-height:0;min-width:0}
 .deck[data-deck="B"]{--c:var(--b);grid-template-columns:minmax(0,1fr) 40px}
 .deck[data-deck="B"] .tempo{order:2}
-.tempo{display:grid;grid-template-rows:auto 1fr auto auto;justify-items:center;gap:4px;min-height:0}
+.vinyl{width:38px;height:24px;font-size:10px}
+.vinyl.on{background:var(--c);color:var(--bg);border-color:transparent}
+.jog.touch{border-color:var(--c)}
+.tempo{display:grid;grid-template-rows:auto auto 1fr auto auto;justify-items:center;gap:4px;min-height:0}
 .range{font-size:10px;color:var(--dim);padding:2px 4px;border:1px solid var(--line);border-radius:5px}
 .pv{font-size:9px;color:var(--dim);font-variant-numeric:tabular-nums}
 .sync{width:38px;height:clamp(26px,7vh,40px);font-size:10px}
@@ -293,6 +296,51 @@ const frac = b => ({ 0.125: '⅛', 0.25: '¼', 0.5: '½', 0.75: '¾', 0.0625: '1
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 /* =================== Motor de audio =================== */
+const SCRATCH_CODE = `
+class Scratch extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.l = null; this.r = null; this.pos = 0; this.vel = 0; this.target = 0; this.active = false; this.n = 0;
+    this.port.onmessage = e => {
+      const m = e.data;
+      if (m.type === 'start') { this.l = m.l; this.r = m.r || m.l; this.pos = m.pos; this.target = m.pos; this.vel = m.vel || 0; this.active = true; }
+      else if (m.type === 'target') this.target = m.pos;
+      else if (m.type === 'stop') { this.active = false; this.l = this.r = null; }
+    };
+  }
+  process(inputs, outputs) {
+    const out = outputs[0], L = out[0], R = out[1];
+    if (!this.active || !this.l) return true;
+    const N = L.length, len = this.l.length;
+    // la púa persigue la posición del dedo: alcanza el objetivo en ~3 bloques
+    const v1 = Math.max(-6, Math.min(6, (this.target - this.pos) / (N * 3))), v0 = this.vel;
+    for (let i = 0; i < N; i++) {
+      this.pos += v0 + (v1 - v0) * (i + 1) / N;
+      if (this.pos < 0) this.pos = 0; else if (this.pos > len - 2) this.pos = len - 2;
+      const j = this.pos | 0, f = this.pos - j;
+      L[i] = this.l[j] + (this.l[j + 1] - this.l[j]) * f;
+      if (R) R[i] = this.r[j] + (this.r[j + 1] - this.r[j]) * f;
+    }
+    this.vel = v1;
+    if ((this.n++ & 1) === 0) this.port.postMessage(this.pos);
+    return true;
+  }
+}
+registerProcessor('scratch', Scratch);`;
+let scratchReady = false;
+async function initScratch() {
+  try {
+    const url = URL.createObjectURL(new Blob([SCRATCH_CODE], { type: 'application/javascript' }));
+    await ctx.audioWorklet.addModule(url);
+    decks.forEach(d => {
+      d.scr = new AudioWorkletNode(ctx, 'scratch', { numberOfInputs: 0, outputChannelCount: [2] });
+      d.scr.connect(d.trim);
+      d.scr.port.onmessage = e => { if (d.scratching) d.scrPos = d.scrBase + e.data / d.buffer.sampleRate; };
+    });
+    scratchReady = true;
+  } catch (e) { scratchReady = false; }
+}
+
 let ctx = null, bus, out, smpGain, fx = null, xval = .5;
 const fxS = { type: 0, beat: 3, ch: 'M', level: .5, on: false, smp: .8 };
 let samples = [], smpSrc = Array(8).fill(null);
@@ -306,6 +354,7 @@ function ensureCtx() {
     bus = ctx.createGain(); bus.connect(out);
     smpGain = ctx.createGain(); smpGain.gain.value = fxS.smp * fxS.smp * 1.2; smpGain.connect(bus);
     decks.forEach(d => d.initAudio());
+    initScratch();
     buildFx(); applyXfader(); applyFx();
     buildSamples().then(b => { samples = b; });
     try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {}
@@ -321,7 +370,7 @@ class Deck {
       id, buffer: null, src: null, playing: false, offset: 0, startedAt: 0, curRate: 1,
       pitch: 0, bend: 0, range: .08, cue: 0, hot: Array(8).fill(null), bpm: null, analyzing: false,
       peaks: null, name: '', vol: .9, level: 0, loop: null, loopIn: null, loopBeats: 4,
-      mode: 'hot', slip: null, braking: null, held: new Set(),
+      mode: 'hot', vinyl: true, scratching: false, slip: null, braking: null, held: new Set(),
       eq: { gain: .5, high: .5, mid: .5, low: .5, filt: .5 }
     });
   }
@@ -366,6 +415,7 @@ class Deck {
   beat() { return this.bpm ? 60 / this.bpm : null; }                 // en tiempo de la pista
   realBeat() { return this.bpm ? 60 / (this.bpm * (1 + this.pitch)) : .5; } // en segundos reales
   pos() {
+    if (this.scratching) return this.scrPos;
     if (!this.playing) return this.offset;
     const e = ctx.currentTime - this.startedAt;
     if (this.braking) { const T = this.braking.T, x = Math.min(e, T); return Math.min(this.duration, this.offset + this.braking.r0 * (x - x * x / (2 * T))); }
@@ -380,7 +430,7 @@ class Deck {
     if (this.src) this.src.playbackRate.setValueAtTime(this.curRate, ctx.currentTime);
   }
   play() {
-    if (!this.buffer || this.playing) return;
+    if (!this.buffer || this.playing || this.scratching) return;
     ensureCtx();
     if (this.offset >= this.duration - .05) { this.offset = 0; this.loop = null; }
     const s = ctx.createBufferSource();
@@ -403,6 +453,35 @@ class Deck {
     t = clamp(t, 0, this.duration);
     if (this.playing) { this.stopSrc(); this.playing = false; this.offset = t; this.play(); }
     else this.offset = t;
+  }
+
+  /* Scratch: el dedo sobre el plato mueve la púa hacia adelante y atrás con sonido */
+  scratchStart() {
+    if (!this.buffer || !this.scr || this.scratching) return false;
+    const p = this.pos(), sr = this.buffer.sampleRate;
+    this.scrWas = this.playing;
+    const vel = this.playing ? this.curRate : 0;
+    if (this.playing) this.pause();
+    const a = Math.max(0, Math.floor((p - 10) * sr)), b = Math.min(this.buffer.length, Math.ceil((p + 10) * sr));
+    const l = this.buffer.getChannelData(0).slice(a, b);
+    const r = this.buffer.numberOfChannels > 1 ? this.buffer.getChannelData(1).slice(a, b) : null;
+    Object.assign(this, { scrBase: a / sr, scrEnd: b / sr, scrPos: p, scrTarget: p, scratching: true });
+    this.scr.port.postMessage({ type: 'start', l, r, pos: (p - this.scrBase) * sr, vel }, r ? [l.buffer, r.buffer] : [l.buffer]);
+    return true;
+  }
+  scratchMove(dSec) {
+    if (!this.scratching) return;
+    this.scrTarget = clamp(this.scrTarget + dSec, this.scrBase, this.scrEnd);
+    this.scr.port.postMessage({ type: 'target', pos: (this.scrTarget - this.scrBase) * this.buffer.sampleRate });
+  }
+  scratchEnd() {
+    if (!this.scratching) return;
+    this.scr.port.postMessage({ type: 'stop' });
+    this.scratching = false;
+    this.offset = clamp(this.scrPos, 0, this.duration);
+    if (this.loop && (this.offset < this.loop.start || this.offset >= this.loop.end)) this.loop = null;
+    if (this.scrWas) this.play();
+    refresh(this);
   }
 
   /* Loops */
@@ -832,6 +911,7 @@ function waveHTML(id) {
 }
 function deckHTML(id) {
   return `<div class="tempo">
+    <button class="btn vinyl on" aria-pressed="true" aria-label="Modo vinilo para scratch">Vinilo</button>
     <button class="range" aria-label="Rango de pitch">±8</button>
     <div class="fader v pf" aria-label="Pitch ${id}"></div>
     <span class="pv">+0,0%</span>
@@ -1091,23 +1171,40 @@ function wire(d) {
   d.pf = fader($('.pf', r), { vertical: true, def: .5,
     onChange: v => { d.pitch = Math.abs(v - .5) < .012 ? 0 : (v - .5) * 2 * d.range; d.updateRate(); refresh(d); } });
 
-  // Jog
-  const jog = $('.jog', r); let last = null, cx = 0, cy = 0, bendT;
+  // Jog: con Vinilo activo, tocar el plato hace scratch; el borde siempre empuja o frena
+  const jog = $('.jog', r); let last = null, cx = 0, cy = 0, bendT, jmode = null, jid = null;
   jog.addEventListener('pointerdown', e => {
-    if (!d.buffer) return;
-    jog.setPointerCapture(e.pointerId);
+    if (!d.buffer || jid !== null) return;
+    jog.setPointerCapture(e.pointerId); jid = e.pointerId;
     const b = jog.getBoundingClientRect(); cx = b.left + b.width / 2; cy = b.top + b.height / 2;
     last = Math.atan2(e.clientY - cy, e.clientX - cx);
+    const onTop = Math.hypot(e.clientX - cx, e.clientY - cy) < b.width / 2 * .78;
+    jmode = d.vinyl && onTop && d.scratchStart() ? 'scratch' : d.playing ? 'bend' : 'seek';
+    jog.classList.toggle('touch', jmode === 'scratch');
   });
   jog.addEventListener('pointermove', e => {
-    if (last === null || !jog.hasPointerCapture(e.pointerId)) return;
+    if (e.pointerId !== jid || last === null) return;
     const a = Math.atan2(e.clientY - cy, e.clientX - cx);
     let da = a - last; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI; last = a;
-    if (d.playing) { d.bend = clamp(da * 5, -.6, .6); d.updateRate(); clearTimeout(bendT); bendT = setTimeout(() => { d.bend = 0; d.updateRate(); }, 70); }
-    else d.seek(d.offset + da / (2 * Math.PI) * 1.8);
+    const dSec = da / (2 * Math.PI) * 1.8;                      // una vuelta = 1,8 s (33⅓ rpm)
+    if (jmode === 'scratch') d.scratchMove(dSec);
+    else if (jmode === 'bend' && d.playing) { d.bend = clamp(da * 5, -.6, .6); d.updateRate(); clearTimeout(bendT); bendT = setTimeout(() => { d.bend = 0; d.updateRate(); }, 70); }
+    else if (!d.playing) d.seek(d.offset + dSec);
   });
-  const jogEnd = () => { last = null; if (d.bend) { d.bend = 0; d.updateRate(); } };
+  const jogEnd = e => {
+    if (e.pointerId !== jid) return;
+    jid = null; last = null; jog.classList.remove('touch');
+    if (jmode === 'scratch') d.scratchEnd();
+    if (d.bend) { d.bend = 0; d.updateRate(); }
+    jmode = null;
+  };
   jog.addEventListener('pointerup', jogEnd); jog.addEventListener('pointercancel', jogEnd);
+  const vb = $('.vinyl', r);
+  vb.addEventListener('click', () => {
+    d.vinyl = !d.vinyl; vb.classList.toggle('on', d.vinyl); vb.setAttribute('aria-pressed', d.vinyl);
+    toast(d.vinyl ? (ctx && !scratchReady ? 'Este navegador no permite scratch; el jog empuja o frena' : 'Scratch activado: toca el centro del plato')
+                  : 'Vinilo apagado: el jog solo empuja o frena');
+  });
 
   // Arrastrar la forma de onda
   const wave = $('.wave', w); let ws = null;
