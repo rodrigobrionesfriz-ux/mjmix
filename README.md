@@ -20,13 +20,25 @@ y abre `http://localhost:8000`. El service worker necesita `localhost` o HTTPS.
 
 ## Controles
 
-- **Cargar**: elige un MP3, WAV o M4A del teléfono. El BPM se calcula solo.
+La app se usa con el teléfono en horizontal. En tablet funciona en ambas posiciones.
+
+**Deck**
+- **Cargar** (junto a cada forma de onda): elige un MP3, WAV o M4A. El BPM se calcula solo.
 - **Play / Cue**: Cue en pausa marca el punto; Cue sonando vuelve a ese punto y pausa.
-- **Hot cues 1 a 4**: toca uno vacío para marcarlo, toca uno marcado para saltar. Mantén presionado para borrarlo.
-- **Sync**: iguala el tempo con el otro deck.
-- **Pitch**: arrastra el fader; `±8` cambia el rango (8, 16, 50 %).
+- **Pitch y Sync**: fader en el borde exterior; `±8` cambia el rango (8, 16, 50 %).
 - **Jog**: con la pista sonando empuja o frena; en pausa busca.
-- **Forma de onda**: arrástrala para moverte. La barra delgada de abajo salta a cualquier punto.
+- **Loops**: `↻` activa un loop del largo indicado (por defecto 4 beats) y lo vuelve a tocar para salir. `½` y `×2` cambian el largo. `In` y `Out` arman un loop manual.
+
+**Modos de pads**
+- **Hot cue**: 8 puntos por deck. Toca para marcar o saltar; mantén presionado para borrar.
+- **Pad FX**: se activan mientras mantienes el pad. Roll de ½ a 1/16 de beat (al soltar la pista sigue donde habría ido), Eco, Filtro HP, Filtro LP y Freno.
+- **Salto**: fila de arriba retrocede 1, 4, 8 o 16 beats; fila de abajo avanza. Si hay loop activo, el loop se mueve con el salto.
+- **Sampler**: 8 sonidos incluidos, compartidos entre ambos decks.
+
+**Mixer**
+- Gain, Agudos, Medios, Graves y Filtro por canal (Filtro a la izquierda corta agudos, a la derecha corta graves).
+- **Beat FX**: elige efecto con ◀ ▶ (Eco, Reverb, Flanger, Phaser), ajusta el tiempo con − +, elige canal A, Master o B, y actívalo con On. Nivel controla la intensidad.
+- **Sampler**: volumen de los sonidos del sampler.
 - Doble toque en cualquier fader o perilla lo devuelve a su posición inicial.
 
 ## Notas
