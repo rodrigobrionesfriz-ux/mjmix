@@ -33,6 +33,7 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 - **Cargar** (junto a cada forma de onda): muestra solo los formatos que tu teléfono puede reproducir (MP3, M4A, WAV y, según el equipo, AAC, FLAC u OGG). El BPM se calcula solo.
 - **Play / Cue**: Cue en pausa marca el punto; Cue sonando vuelve a ese punto y pausa. Doble toque en Cue lleva el tema al inicio.
 - **Pitch y Sync**: fader en el borde exterior; `±8` cambia el rango (8, 16, 50 %). Sync iguala el tempo con el otro deck y, si ambos suenan, alinea los beats. Después el deck queda libre para ajustarlo a mano.
+- **Tono fijo**: el botón **Tono** (arriba del pitch) hace que el fader de pitch, Sync y Automix cambien solo el tempo; el tono de la canción se mantiene. Apagado, el pitch cambia tempo y tono como un tocadiscos. El Freno siempre baja el tono, a propósito.
 - **Jog y scratch**: con **Vinilo** encendido (botón sobre el pitch), poner el dedo en el centro del plato detiene la pista como un disco y al moverlo hace scratch hacia adelante o atrás. Al soltar, la pista sigue desde donde quedó. El borde del plato siempre empuja o frena. Con Vinilo apagado, el jog solo empuja o frena, y en pausa busca.
 - **Loops**: `↻` activa un loop del largo indicado (por defecto 4 beats) y lo vuelve a tocar para salir. `½` y `×2` cambian el largo. `In` y `Out` arman un loop manual.
 
