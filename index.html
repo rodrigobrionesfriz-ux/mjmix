@@ -36,8 +36,46 @@ button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-of
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;gap:6px;padding:6px}
 
 /* Formas de onda */
-.waves{display:grid;gap:4px}
-.wrow{--c:var(--a);display:grid;grid-template-columns:1fr auto;gap:6px}
+.waves{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 6px}
+.wrow{--c:var(--a);grid-column:1;display:grid;grid-template-columns:1fr auto;gap:6px}
+.libbtn{grid-column:2;grid-row:1/3;width:66px;display:grid;place-items:center;align-content:center;gap:4px;font-size:10px;font-weight:500}
+.libbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
+
+/* Biblioteca */
+.sheet{position:fixed;inset:0;z-index:15;background:var(--bg);display:none;grid-template-rows:auto auto 1fr;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.sheet.open{display:grid}
+.sheet-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px}
+.sheet-head h2{font-size:16px;font-weight:600}
+.count{color:var(--dim);font-size:12px;margin-right:4px}
+.search{flex:1;min-width:120px;height:32px;background:var(--well);border:1px solid var(--line);border-radius:8px;
+  color:var(--ink);font:inherit;font-size:13px;padding:0 10px;-webkit-user-select:text;user-select:text}
+.sheet-head .btn{height:32px;padding:0 11px;font-size:12px}
+.sheet-head .btn[hidden]{display:none}
+.cols,.row{display:grid;grid-template-columns:minmax(0,1fr) 46px 46px 32px 46px 46px;align-items:center;gap:8px}
+.cols{padding:4px 10px;font-size:10px;color:var(--dim);border-bottom:1px solid var(--line)}
+.cols span:nth-child(n+2){text-align:right}
+.list{overflow-y:auto;padding:0 10px 12px;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.row{min-height:48px;border-bottom:1px solid var(--panel2)}
+.nm{min-width:0}
+.nm b{display:block;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.nm small{display:block;font-size:10px;color:var(--dim);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.meta{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right}
+.del{height:32px;color:var(--dim);font-size:14px;border-radius:8px}
+.ld{height:34px;border-radius:8px;font-weight:700;font-size:13px;border:1.5px solid var(--dc);color:var(--dc)}
+.ld[data-deck="A"]{--dc:var(--a)} .ld[data-deck="B"]{--dc:var(--b)}
+.ld.loaded{background:var(--dc);color:var(--bg)}
+.empty{padding:40px 20px;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
+
+/* Diálogo */
+.modal{position:fixed;inset:0;z-index:25;background:rgba(10,12,20,.6);display:none;place-items:center;padding:20px}
+.modal.open{display:grid}
+.dlg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:380px;width:100%;display:grid;gap:8px}
+.dlg h3{font-size:16px;font-weight:600}
+.dlg p{font-size:13px;color:var(--dim);line-height:1.45}
+.acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.acts .btn{height:38px;padding:0 16px;font-size:13px}
+.acts .ok{background:var(--a);color:var(--bg);border-color:transparent}
 .wrow[data-deck="B"]{--c:var(--b)}
 .wbox{display:grid;grid-template-rows:1fr 6px;gap:2px;height:clamp(40px,11vh,96px);min-width:0}
 .wave{position:relative;background:var(--well);border-radius:6px;overflow:hidden;touch-action:none;border-left:3px solid var(--c)}
@@ -159,6 +197,7 @@ canvas{display:block;width:100%;height:100%}
   <section class="waves">
     <div class="wrow" data-deck="A"></div>
     <div class="wrow" data-deck="B"></div>
+    <button class="btn libbtn" aria-label="Abrir biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v14H4zM10 5h4v14h-4zM16.5 5.5l3.6 1-3.4 13-3.6-1z"/></svg>Biblioteca</button>
   </section>
 
   <section class="body">
@@ -186,6 +225,26 @@ canvas{display:block;width:100%;height:100%}
     <div class="deck" data-deck="B"></div>
   </section>
 </main>
+
+<section class="sheet" aria-label="Biblioteca">
+  <div class="sheet-head">
+    <h2>Biblioteca</h2><span class="count"></span>
+    <input class="search" type="search" placeholder="Buscar tema" aria-label="Buscar tema">
+    <button class="btn libdir">Agregar carpeta</button>
+    <button class="btn libfiles">Agregar temas</button>
+    <button class="btn libclear">Vaciar</button>
+    <button class="btn libclose" aria-label="Cerrar biblioteca">Cerrar</button>
+    <input type="file" class="in-dir" webkitdirectory multiple hidden>
+    <input type="file" class="in-files" multiple hidden>
+  </div>
+  <div class="cols"><span>Tema</span><span>Duración</span><span>BPM</span><span></span><span></span><span></span></div>
+  <div class="list"></div>
+</section>
+
+<div class="modal" role="dialog" aria-modal="true">
+  <div class="dlg"><h3></h3><p></p>
+    <div class="acts"><button class="btn cancel">Cancelar</button><button class="btn ok">Aceptar</button></div></div>
+</div>
 <div class="rotate">
   <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="14" width="32" height="20" rx="3"/><path d="M14 8a14 14 0 0 1 20 0M34 8l0 -4M34 8l-4 0"/></svg>
   Gira el teléfono para mezclar
@@ -215,6 +274,16 @@ const SAMPLE_NAMES = ['Bombo', 'Palma', 'Hat', 'Caja', 'Bocina', 'Láser', 'Subi
 const FX_TYPES = ['Eco', 'Reverb', 'Flanger', 'Phaser'];
 const FX_BEATS = [1 / 4, 1 / 2, 3 / 4, 1, 2, 4];
 const WIN = 8, PPS = 100;
+const FORMATS = [['.mp3', 'audio/mpeg'], ['.m4a', 'audio/mp4'], ['.aac', 'audio/aac'], ['.wav', 'audio/wav'],
+  ['.flac', 'audio/flac'], ['.ogg', 'audio/ogg'], ['.opus', 'audio/ogg; codecs=opus'], ['.webm', 'audio/webm']];
+const OK_FORMATS = (() => {
+  const probe = document.createElement('audio');
+  const ok = FORMATS.filter(([, m]) => probe.canPlayType && probe.canPlayType(m) !== '');
+  return ok.length ? ok : FORMATS.slice(0, 4);
+})();
+const EXTS = OK_FORMATS.map(([e]) => e);
+const ACCEPT = [...new Set(OK_FORMATS.flatMap(([e, m]) => [e, m.split(';')[0]]))].join(',');
+const EXT_LIST = EXTS.map(e => e.slice(1).toUpperCase()).join(', ');
 const dpr = Math.min(window.devicePixelRatio || 1, 2);
 const ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>';
@@ -423,24 +492,36 @@ class Deck {
     this.braking = b;
   }
 
-  async load(file) {
-    if (this.playing) { toast(`Pausa el deck ${this.id} antes de cargar otra pista`); return; }
+  async load(file, meta = {}) {
+    const name = meta.name || file.name.replace(/\.[^.]+$/, '');
+    if (this.playing) {
+      const ok = await ask(`El deck ${this.id} está sonando`,
+        `Si cargas «${name}» se detiene lo que está sonando en el deck ${this.id}.`, 'Cargar igual');
+      if (!ok) return false;
+      this.pause(); refresh(this);
+    }
     ensureCtx();
     this.el.title.textContent = 'Cargando…';
     let buf;
     try { buf = await ctx.decodeAudioData(await file.arrayBuffer()); }
-    catch (e) { toast('No pude leer ese archivo. Prueba con MP3, WAV o M4A.'); refresh(this); return; }
+    catch (e) { toast(`No pude leer ese archivo. Formatos compatibles: ${EXT_LIST}`); refresh(this); return false; }
+    if (this.playing) this.pause();
     this.stopSrc();
     Object.assign(this, {
-      buffer: buf, offset: 0, cue: 0, hot: Array(8).fill(null), bpm: null, analyzing: true,
-      pitch: 0, bend: 0, loop: null, loopIn: null, slip: null, name: file.name.replace(/\.[^.]+$/, '')
+      buffer: buf, offset: 0, cue: 0, hot: Array(8).fill(null), bpm: meta.bpm || null, analyzing: !meta.bpm,
+      pitch: 0, bend: 0, loop: null, loopIn: null, slip: null, name, libId: meta.libId ?? null
     });
     this.pf.set(.5, true);
     this.peaks = computePeaks(buf);
-    layout(); refresh(this);
-    this.bpm = await detectBPM(buf);
-    this.analyzing = false;
-    refresh(this);
+    layout(); refresh(this); renderLib();
+    if (!meta.bpm) {
+      detectBPM(buf).then(b => {
+        if (this.buffer !== buf) return;
+        this.bpm = b; this.analyzing = false; refresh(this);
+        if (this.libId != null) libUpdate(this.libId, { bpm: b, duration: buf.duration });
+      });
+    } else if (this.libId != null && !meta.duration) libUpdate(this.libId, { duration: buf.duration });
+    return true;
   }
 }
 
@@ -584,6 +665,95 @@ function playSample(i) {
   decks.forEach(d => d.mode === 'smp' && renderPads(d));
 }
 
+/* =================== Diálogo =================== */
+let askResolve = null;
+function ask(title, msg, okLabel = 'Aceptar') {
+  const m = $('.modal');
+  $('h3', m).textContent = title; $('p', m).textContent = msg; $('.ok', m).textContent = okLabel;
+  if (askResolve) askResolve(false);
+  m.classList.add('open'); $('.cancel', m).focus();
+  return new Promise(res => { askResolve = res; });
+}
+function closeAsk(v) { $('.modal').classList.remove('open'); if (askResolve) { const r = askResolve; askResolve = null; r(v); } }
+
+/* =================== Biblioteca (IndexedDB) =================== */
+let lib = [], dbp = null;
+const extOf = n => ('.' + n.split('.').pop()).toLowerCase();
+const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const norm = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function db() {
+  return dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('appdj', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+}
+async function tx(mode, fn) {
+  const d = await db();
+  return new Promise((res, rej) => {
+    const t = d.transaction('tracks', mode), req = fn(t.objectStore('tracks'));
+    t.oncomplete = () => res(req ? req.result : undefined);
+    t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+const sortLib = () => lib.sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }));
+async function libLoad() {
+  try { lib = await tx('readonly', st => st.getAll()); } catch (e) { lib = []; }
+  sortLib(); renderLib();
+}
+async function libAdd(files) {
+  const all = [...files], list = all.filter(f => EXTS.includes(extOf(f.name)));
+  if (!list.length) { if (all.length) toast(`No encontré temas compatibles. Usa ${EXT_LIST}`); return; }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  let added = 0, dup = 0;
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i], name = f.name.replace(/\.[^.]+$/, '');
+    if (lib.some(t => t.name === name && t.size === f.size)) { dup++; continue; }
+    const rec = { name, folder: (f.webkitRelativePath || '').split('/').slice(0, -1).join(' / '),
+      size: f.size, type: f.type, blob: f, bpm: null, duration: null, added: Date.now() };
+    try { rec.id = await tx('readwrite', st => st.add(rec)); lib.push(rec); added++; }
+    catch (e) { toast('No queda espacio para guardar más temas en la app'); break; }
+    if (list.length > 5 && i % 5 === 4) { sortLib(); renderLib(); toast(`Agregando ${i + 1} de ${list.length}…`); }
+  }
+  sortLib(); renderLib();
+  const skip = all.length - list.length;
+  toast(`${added} ${added === 1 ? 'tema agregado' : 'temas agregados'}` +
+    (dup ? `, ${dup} ya estaban` : '') + (skip ? `, ${skip} no compatibles` : ''));
+}
+async function libUpdate(id, patch) {
+  const t = lib.find(x => x.id === id); if (!t) return;
+  Object.assign(t, patch);
+  try { await tx('readwrite', st => st.put(t)); } catch (e) {}
+  renderLib();
+}
+async function libRemove(id) {
+  try { await tx('readwrite', st => st.delete(id)); } catch (e) {}
+  const t = lib.find(x => x.id === id);
+  lib = lib.filter(x => x.id !== id); renderLib();
+  if (t) toast(`«${t.name}» quitado de la biblioteca`);
+}
+function renderLib() {
+  const box = $('.list'); if (!box) return;
+  $('.count').textContent = `${lib.length} ${lib.length === 1 ? 'tema' : 'temas'}`;
+  const q = norm($('.search').value.trim());
+  const rows = q ? lib.filter(t => norm(t.name + ' ' + t.folder).includes(q)) : lib;
+  if (!lib.length) { box.innerHTML = '<p class="empty">Tu biblioteca está vacía.<br>Usa Agregar carpeta o Agregar temas para sumar música del teléfono.</p>'; return; }
+  if (!rows.length) { box.innerHTML = '<p class="empty">No hay temas que coincidan con la búsqueda.</p>'; return; }
+  box.innerHTML = rows.map(t => `<div class="row" data-id="${t.id}">
+    <div class="nm"><b>${esc(t.name)}</b>${t.folder ? `<small>${esc(t.folder)}</small>` : ''}</div>
+    <span class="meta">${t.duration ? fmt(t.duration) : '--'}</span>
+    <span class="meta">${t.bpm ? t.bpm.toFixed(1).replace('.', ',') : '--'}</span>
+    <button class="btn del" aria-label="Quitar ${esc(t.name)} de la biblioteca">✕</button>
+    <button class="ld${decks[0].libId === t.id ? ' loaded' : ''}" data-deck="A" aria-label="Cargar en deck A">A</button>
+    <button class="ld${decks[1].libId === t.id ? ' loaded' : ''}" data-deck="B" aria-label="Cargar en deck B">B</button></div>`).join('');
+}
+async function loadFromLib(id, deckId) {
+  const t = lib.find(x => x.id === id), d = decks.find(x => x.id === deckId);
+  if (!t || !d) return;
+  const ok = await d.load(t.blob, { name: t.name, libId: t.id, bpm: t.bpm, duration: t.duration });
+  if (ok) { $('.sheet').classList.remove('open'); toast(`«${t.name}» cargado en el deck ${deckId}`); }
+}
+
 let wakeLock = null;
 async function keepAwake() {
   try { if (!wakeLock && 'wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
@@ -634,7 +804,7 @@ function waveHTML(id) {
       <span class="hint">Toca Cargar para elegir una pista</span></div>
     <div class="overview"><canvas></canvas><i class="ov-head"></i></div></div>
   <button class="btn load" aria-label="Cargar pista en deck ${id}">Cargar</button>
-  <input type="file" accept="audio/*" hidden>`;
+  <input type="file" accept="${ACCEPT}" hidden>`;
 }
 function deckHTML(id) {
   return `<div class="tempo">
@@ -820,15 +990,29 @@ function wire(d) {
 
   const input = $('input[type=file]', w);
   $('.load', w).addEventListener('click', () => input.click());
-  input.addEventListener('change', () => { if (input.files[0]) d.load(input.files[0]); input.value = ''; });
+  input.addEventListener('change', () => {
+    const f = input.files[0]; input.value = '';
+    if (!f) return;
+    const ext = ('.' + f.name.split('.').pop()).toLowerCase();
+    if (!EXTS.includes(ext)) { toast(`Formato no compatible. Usa ${EXT_LIST}`); return; }
+    d.load(f);
+  });
 
   d.el.play.addEventListener('pointerdown', () => {
     if (!d.buffer) { toast('Primero carga una pista'); return; }
     if (d.playing) d.pause(); else { d.play(); keepAwake(); }
     refresh(d);
   });
+  let cueTap = 0, cueBefore = 0;
   d.el.cue.addEventListener('pointerdown', () => {
     if (!d.buffer) return;
+    const now = performance.now();
+    if (now - cueTap < 350) {                 // segundo toque: al inicio del tema
+      cueTap = 0; d.cue = cueBefore;          // deshace lo que hizo el primer toque
+      d.pause(); d.loop = null; d.loopIn = null; d.seek(0);
+      refresh(d); toast(`Deck ${d.id} al inicio`); return;
+    }
+    cueTap = now; cueBefore = d.cue;
     if (d.playing) { d.pause(); if (d.loop && (d.cue < d.loop.start || d.cue >= d.loop.end)) d.loop = null; d.seek(d.cue); }
     else if (Math.abs(d.offset - d.cue) > .01) d.cue = d.offset;
     refresh(d);
@@ -915,6 +1099,33 @@ $('.fxon').addEventListener('pointerdown', () => { fxS.on = !fxS.on; applyFx(); 
 knob($('.fxlevel'), .5, v => { fxS.level = v; applyFx(); });
 knob($('.smpvol'), .8, v => { fxS.smp = v; if (smpGain) smpGain.gain.value = v * v * 1.2; });
 applyFx();
+
+$('.libbtn').addEventListener('click', () => { $('.sheet').classList.add('open'); renderLib(); });
+$('.libclose').addEventListener('click', () => $('.sheet').classList.remove('open'));
+$('.search').addEventListener('input', renderLib);
+const inDir = $('.in-dir'), inFiles = $('.in-files');
+inFiles.setAttribute('accept', ACCEPT);
+if (!('webkitdirectory' in inDir)) $('.libdir').hidden = true;
+$('.libdir').addEventListener('click', () => inDir.click());
+$('.libfiles').addEventListener('click', () => inFiles.click());
+[inDir, inFiles].forEach(inp => inp.addEventListener('change', () => { const f = [...inp.files]; inp.value = ''; libAdd(f); }));
+$('.libclear').addEventListener('click', async () => {
+  if (!lib.length) return;
+  if (!await ask('Vaciar biblioteca', 'Se quitan todos los temas de la app. Los archivos originales en tu teléfono no se borran.', 'Vaciar')) return;
+  try { await tx('readwrite', st => st.clear()); } catch (e) {}
+  lib = []; renderLib();
+});
+$('.list').addEventListener('click', e => {
+  const row = e.target.closest('.row'); if (!row) return;
+  const id = +row.dataset.id;
+  if (e.target.closest('.del')) libRemove(id);
+  else { const b = e.target.closest('.ld'); if (b) loadFromLib(id, b.dataset.deck); }
+});
+$('.modal .ok').addEventListener('click', () => closeAsk(true));
+$('.modal .cancel').addEventListener('click', () => closeAsk(false));
+$('.modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAsk(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && askResolve) closeAsk(false); });
+libLoad();
 
 new ResizeObserver(layout).observe($('.app'));
 layout();
