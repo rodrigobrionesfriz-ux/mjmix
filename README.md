@@ -25,7 +25,7 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 **Deck**
 - **Cargar** (junto a cada forma de onda): muestra solo los formatos que tu teléfono puede reproducir (MP3, M4A, WAV y, según el equipo, AAC, FLAC u OGG). El BPM se calcula solo.
 - **Play / Cue**: Cue en pausa marca el punto; Cue sonando vuelve a ese punto y pausa. Doble toque en Cue lleva el tema al inicio.
-- **Pitch y Sync**: fader en el borde exterior; `±8` cambia el rango (8, 16, 50 %).
+- **Pitch y Sync**: fader en el borde exterior; `±8` cambia el rango (8, 16, 50 %). Sync iguala el tempo con el otro deck y, si ambos suenan, alinea los beats. Después el deck queda libre para ajustarlo a mano.
 - **Jog**: con la pista sonando empuja o frena; en pausa busca.
 - **Loops**: `↻` activa un loop del largo indicado (por defecto 4 beats) y lo vuelve a tocar para salir. `½` y `×2` cambian el largo. `In` y `Out` arman un loop manual.
 

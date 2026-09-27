@@ -23,6 +23,7 @@
   --font:"Chakra Petch", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);
   overscroll-behavior:none;-webkit-user-select:none;user-select:none;
   -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
@@ -31,6 +32,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-
 button:focus-visible,.knob:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .btn{background:var(--panel2);border:1px solid var(--line);border-radius:7px;font-size:11px;font-weight:600;
   display:grid;place-items:center;line-height:1.05;text-align:center}
+.btn:not(.pad){white-space:nowrap;overflow:hidden}
 .btn.on{background:var(--ink);color:var(--bg);border-color:transparent}
 
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;gap:6px;padding:6px}
@@ -125,7 +127,7 @@ canvas{display:block;width:100%;height:100%}
 .play.on{background:var(--c);color:var(--bg);border-color:transparent}
 .cue.on{border-color:var(--ink)}
 .pads{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:clamp(30px,9vh,66px);gap:4px}
-.pad{border-radius:6px;background:var(--panel2);border:1.5px solid color-mix(in srgb,var(--pc) 50%,transparent);
+.pad{overflow:hidden;border-radius:6px;background:var(--panel2);border:1.5px solid color-mix(in srgb,var(--pc) 50%,transparent);
   font-size:9.5px;line-height:1.1;color:var(--dim);display:grid;place-items:center;text-align:center;touch-action:none}
 .pad.set{background:color-mix(in srgb,var(--pc) 32%,var(--panel2));color:var(--ink);font-weight:600}
 .pad.lit{background:var(--pc);color:var(--bg);border-color:transparent;font-weight:700}
@@ -514,13 +516,14 @@ class Deck {
     this.pf.set(.5, true);
     this.peaks = computePeaks(buf);
     layout(); refresh(this); renderLib();
-    if (!meta.bpm) {
-      detectBPM(buf).then(b => {
-        if (this.buffer !== buf) return;
-        this.bpm = b; this.analyzing = false; refresh(this);
-        if (this.libId != null) libUpdate(this.libId, { bpm: b, duration: buf.duration });
-      });
-    } else if (this.libId != null && !meta.duration) libUpdate(this.libId, { duration: buf.duration });
+    this.onset = null;
+    analyze(buf).then(r => {
+      if (this.buffer !== buf) return;
+      this.analyzing = false;
+      if (r) { this.bpm = r.bpm; this.onset = r.onset; this.fps = r.fps; }
+      refresh(this);
+      if (this.libId != null && r) libUpdate(this.libId, { bpm: r.bpm, duration: buf.duration });
+    });
     return true;
   }
 }
@@ -540,27 +543,47 @@ function computePeaks(buf) {
   return out;
 }
 
-async function detectBPM(buf) {
+async function analyze(buf) {
   try {
-    const sr = buf.sampleRate, len = Math.min(buf.duration, 60), start = Math.max(0, (buf.duration - len) / 2);
-    const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    const oc = new OC(1, Math.ceil(len * sr), sr);
-    const s = oc.createBufferSource(); s.buffer = buf;
+    const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, sr = 11025;
+    const oc = new OC(1, Math.ceil(buf.duration * sr), sr);
+    const src = oc.createBufferSource(); src.buffer = buf;
     const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 150;
-    s.connect(lp); lp.connect(oc.destination); s.start(0, start, len);
+    src.connect(lp); lp.connect(oc.destination); src.start(0);
     const x = (await oc.startRendering()).getChannelData(0);
-    const hop = 256, n = Math.floor(x.length / hop), env = new Float32Array(n), on = new Float32Array(n);
+    const hop = 105, fps = sr / hop, n = Math.floor(x.length / hop);
+    const env = new Float32Array(n), on = new Float32Array(n);
     for (let i = 0; i < n; i++) { let sum = 0; const o = i * hop; for (let j = 0; j < hop; j++) { const v = x[o + j]; sum += v * v; } env[i] = Math.sqrt(sum / hop); }
     for (let i = 1; i < n; i++) { const d = env[i] - env[i - 1]; on[i] = d > 0 ? d : 0; }
-    const fps = sr / hop;
-    const score = lag => { const L = Math.floor(lag), fr = lag - L; let sc = 0, k = 0;
-      for (let i = 0; i + L + 1 < n; i++, k++) sc += on[i] * (on[i + L] * (1 - fr) + on[i + L + 1] * fr); return k ? sc / k : 0; };
-    let best = 0, bestSc = -1;
-    for (let bpm = 70; bpm <= 180; bpm += .25) { const lag = fps * 60 / bpm, sc = score(lag) + .5 * score(lag * 2); if (sc > bestSc) { bestSc = sc; best = bpm; } }
+    const score = (lag, a, b) => { const L = Math.floor(lag), fr = lag - L; let sc = 0, k = 0;
+      for (let i = a; i + L + 1 < b; i++, k++) sc += on[i] * (on[i + L] * (1 - fr) + on[i + L + 1] * fr); return k ? sc / k : 0; };
+    // 1) estimación gruesa en 60 s del centro
+    const c0 = Math.max(0, Math.floor((n - 60 * fps) / 2)), c1 = Math.min(n, c0 + Math.floor(60 * fps));
+    let best = 0, bs = -1;
+    for (let b = 70; b <= 180; b += .25) { const lag = fps * 60 / b, sc = score(lag, c0, c1) + .5 * score(lag * 2, c0, c1); if (sc > bs) { bs = sc; best = b; } }
     if (!best) return null;
     while (best < 85) best *= 2; while (best > 175) best /= 2;
-    return Math.round(best * 10) / 10;
+    // 2) ajuste fino en todo el tema comparando golpes separados 4, 8 y 16 beats
+    let fine = best; bs = -1;
+    for (let b = best - 1.2; b <= best + 1.2; b += .01) {
+      const lag = fps * 60 / b, sc = score(lag * 4, 0, n) + score(lag * 8, 0, n) + score(lag * 16, 0, n);
+      if (sc > bs) { bs = sc; fine = b; }
+    }
+    if (Math.abs(fine - Math.round(fine)) < .08) fine = Math.round(fine);
+    return { bpm: Math.round(fine * 100) / 100, onset: on, fps };
   } catch (e) { return null; }
+}
+// Segundos (tiempo de la pista) desde el último beat en la posición p
+function beatPhase(d, p) {
+  if (!d.onset || !d.bpm) return null;
+  const on = d.onset, fps = d.fps, Bf = 60 / d.bpm * fps, c = p * fps, n = on.length;
+  const at = i => { i = Math.round(i); return i > 0 && i < n - 1 ? on[i - 1] * .5 + on[i] + on[i + 1] * .5 : 0; };
+  let best = 0, bs = -1;
+  for (let ph = 0; ph < Bf; ph++) {
+    let sc = 0; for (let k = -6; k <= 6; k++) sc += at(c - ph + k * Bf);
+    if (sc > bs) { bs = sc; best = ph; }
+  }
+  return bs > 0 ? best / fps : null;
 }
 
 /* Beat FX del mixer */
@@ -598,6 +621,7 @@ function fxBeatSec() {
 function applyFx() {
   $('.fxname').textContent = FX_TYPES[fxS.type];
   $('.fxbeat').textContent = frac(FX_BEATS[fxS.beat]) + ' beat';
+  fit($('.fxname')); fit($('.fxbeat'));
   $('.fxon').classList.toggle('on', fxS.on);
   $$('.seg .btn').forEach(b => b.classList.toggle('on', b.dataset.ch === fxS.ch));
   if (!fx) return;
@@ -841,7 +865,7 @@ function renderPads(d) {
     else if (d.mode === 'fx') { label = PADFX[i].l; color = 'var(--fx)'; }
     else if (d.mode === 'jump') { const n = JUMPS[i]; label = n < 0 ? `◀ ${-n}` : `${n} ▶`; color = 'var(--jump)'; }
     else { label = SAMPLE_NAMES[i]; color = 'var(--smp)'; lit = lit || !!smpSrc[i]; }
-    if (p._l !== label) { p._l = label; p.innerHTML = label; }
+    if (p._l !== label) { p._l = label; p.innerHTML = label; fit(p); }
     p.style.setProperty('--pc', color);
     p.classList.toggle('set', set && !lit); p.classList.toggle('lit', lit);
   });
@@ -858,7 +882,7 @@ function refresh(d) {
   e.range.textContent = '±' + Math.round(d.range * 100);
   e.lin.classList.toggle('on', d.loopIn != null);
   e.lauto.classList.toggle('on', !!d.loop && !d.slip);
-  e.lauto.textContent = '↻ ' + frac(d.loopBeats);
+  const ll = '↻ ' + frac(d.loopBeats); if (e.lauto.textContent !== ll) { e.lauto.textContent = ll; fit(e.lauto); }
   e.modes.forEach(b => b.classList.toggle('on', b.dataset.m === d.mode));
   e.hint.hidden = !!d.buffer; e.ovh.hidden = !d.buffer;
   renderPads(d);
@@ -927,17 +951,40 @@ function frame() {
   }
   requestAnimationFrame(frame);
 }
-function layout() { decks.forEach(d => { sizeCanvas(d.el.wave); sizeCanvas(d.el.ov); drawOverview(d); }); }
+function layout() { decks.forEach(d => { sizeCanvas(d.el.wave); sizeCanvas(d.el.ov); drawOverview(d); }); fitAll(); }
+// Achica la letra de cada botón hasta que su texto quepa (sirve aunque el teléfono tenga letra grande)
+function fit(el) {
+  if (!el || !el.clientWidth) return;
+  el.style.fontSize = '';
+  let fs = parseFloat(getComputedStyle(el).fontSize), g = 0;
+  while ((el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1) && fs > 6 && g++ < 30) {
+    fs -= .5; el.style.fontSize = fs + 'px';
+  }
+}
+function fitAll() { $$('.btn, .pad, .fxname, .fxbeat, .range, .pv').forEach(fit); }
 
 function syncDeck(d) {
   const o = decks.find(x => x !== d);
-  if (!d.bpm || !o.bpm) { toast('Sync necesita que ambos decks tengan BPM'); return; }
+  if (!d.bpm || !o.bpm) { toast(d.analyzing || o.analyzing ? 'Analizando BPM, prueba en un momento' : 'Sync necesita que ambos decks tengan BPM'); return; }
   let ratio = o.bpm * (1 + o.pitch) / d.bpm;
   if (ratio > 1.4) ratio /= 2; else if (ratio < .7) ratio *= 2;
   const p = ratio - 1;
   if (Math.abs(p) > .5) { toast('Los tempos están demasiado lejos para sincronizar'); return; }
   if (Math.abs(p) > d.range) d.range = RANGES.find(r => r >= Math.abs(p));
-  d.pitch = p; d.pf.set(.5 + p / (2 * d.range), true); d.updateRate(); refresh(d);
+  d.bend = 0; d.pitch = p; d.pf.set(.5 + p / (2 * d.range), true); d.updateRate();
+  let msg = 'Tempo igualado';
+  if (d.playing && o.playing && !d.braking && !d.slip) {
+    const pd = d.pos(), po = o.pos(), fo = beatPhase(o, po), fd = beatPhase(d, pd);
+    if (fo != null && fd != null) {
+      const Bo = 60 / (o.bpm * (1 + o.pitch)), Bd = 60 / (d.bpm * (1 + d.pitch)), B = Math.min(Bo, Bd);
+      let diff = fo / (1 + o.pitch) - fd / (1 + d.pitch);          // en segundos reales
+      diff = ((diff % B) + B * 1.5) % B - B / 2;
+      const shift = diff * (1 + d.pitch);
+      if (Math.abs(shift) > .004) d.seek(pd + shift);
+      msg = 'Tempo y beats alineados';
+    }
+  }
+  refresh(d); toast(msg);
   d.el.sync.classList.add('on'); setTimeout(() => d.el.sync.classList.remove('on'), 250);
 }
 
@@ -1129,6 +1176,7 @@ libLoad();
 
 new ResizeObserver(layout).observe($('.app'));
 layout();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
 requestAnimationFrame(frame);
 
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
