@@ -19,7 +19,7 @@
 :root{
   --bg:#1b2030; --panel:#242a3c; --panel2:#2e3549; --line:#3b4460; --well:#161a26;
   --ink:#ece8df; --dim:#8f97ad;
-  --a:#ff6b5b; --b:#46d0a4; --fx:#b388ff; --jump:#7ee081; --smp:#5aa9ff; --hot:#ff9f43;
+  --a:#ff6b5b; --b:#46d0a4; --fx:#b388ff; --jump:#7ee081; --smp:#5aa9ff; --bloop:#ffb454; --hot:#ff9f43;
   --font:"Chakra Petch", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -161,7 +161,7 @@ canvas{display:block;width:100%;height:100%}
 .lsizes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .lsizes .btn{height:clamp(28px,8vh,44px);font-size:12px;font-weight:500}
 .lsizes .btn.on{background:var(--panel2);border:1.5px solid var(--c);color:var(--c)}
-.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.modes{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .modes .btn{height:clamp(22px,6vh,34px);font-size:10px;font-weight:500;color:var(--dim)}
 .modes .btn.on{background:var(--m);color:var(--bg);font-weight:700}
 .pads{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:clamp(30px,10vh,64px);gap:4px}
@@ -185,14 +185,13 @@ canvas{display:block;width:100%;height:100%}
   background:var(--ink);border-radius:4px;box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .fader.h .thumb::after{content:"";position:absolute;top:6px;bottom:6px;left:50%;width:2px;margin-left:-1px;background:var(--bg)}
 .knob-wrap{display:grid;justify-items:center;gap:1px;font-size:9px;color:var(--dim)}
-.knob{position:relative;width:28px;height:28px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);touch-action:none}
-.knob::after{content:"";position:absolute;left:50%;top:3px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;
-  background:var(--kc,var(--ink));transform-origin:50% 11px;transform:rotate(var(--r,0deg))}
+.knob{--ks:28px;position:relative;width:var(--ks);height:var(--ks);border-radius:50%;background:var(--panel2);border:1px solid var(--line);touch-action:none}
+.knob::after{content:"";position:absolute;left:50%;top:calc(var(--ks) * .1);width:3px;height:calc(var(--ks) * .3);margin-left:-1.5px;border-radius:2px;
+  background:var(--kc,var(--ink));transform-origin:50% calc(var(--ks) * .4);transform:rotate(var(--r,0deg))}
 
 /* EQ y efectos dentro de los paneles del deck */
 .pane .strip{display:flex;flex-wrap:wrap;justify-content:space-around;align-items:center;gap:8px}
-.pane .knob{width:44px;height:44px}
-.pane .knob::after{top:4px;height:13px;transform-origin:50% 18px}
+.pane .knob{--ks:44px}
 .pane .knob-wrap{font-size:10px;gap:3px}
 .strip[data-deck="A"] .knob{--kc:var(--a)} .strip[data-deck="B"] .knob{--kc:var(--b)}
 .fxhome{display:none}
@@ -206,6 +205,73 @@ canvas{display:block;width:100%;height:100%}
 .fxk .knob{--kc:var(--fx)}
 .fxon{width:46px;height:34px;margin-bottom:15px;font-size:12px}
 .fxon.on{background:var(--fx)}
+
+/* ============ Vista de PC y tablet: distribución de controlador de dos canales ============ */
+.desk{display:none}
+body.dk .app{display:none}
+body.dk .desk{display:grid}
+.desk{height:100%;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px;font-size:clamp(11px,.9vw,16px)}
+.d-top{display:grid;grid-template-columns:minmax(0,1fr) clamp(120px,10vw,180px);gap:8px}
+.d-waves{display:grid;gap:5px;min-width:0}
+.d-waves .wrow{grid-template-columns:minmax(0,1fr) clamp(76px,6vw,120px)}
+.d-waves .wbox{height:clamp(54px,9.5vh,130px)}
+.d-waves .winfo{font-size:clamp(11px,.85vw,15px);padding:3px 9px}
+.d-waves .load{font-size:inherit}
+.d-side{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:5px}
+.d-side .side{width:auto}
+.d-side .side .btn,.fsbtn{font-size:inherit}
+.fsbtn{height:clamp(28px,4vh,42px)}
+.d-body{display:grid;grid-template-columns:minmax(0,1fr) clamp(290px,28vw,480px) minmax(0,1fr);gap:8px;min-height:0}
+.d-deck{--c:var(--a);--tw:clamp(54px,4.6vw,84px);background:var(--panel);border-radius:14px;padding:clamp(8px,1vw,16px);
+  display:grid;gap:clamp(6px,.8vw,12px);min-height:0;min-width:0;
+  grid-template-columns:var(--tw) minmax(0,1fr);
+  grid-template-rows:clamp(30px,5.5vh,56px) minmax(0,1fr) clamp(26px,4.2vh,44px) clamp(90px,22vh,240px);
+  grid-template-areas:"tempo loops" "tempo jog" "tempo modes" "tempo perf"}
+.d-deck[data-deck="B"]{--c:var(--b);grid-template-columns:minmax(0,1fr) var(--tw);grid-template-areas:"loops tempo" "jog tempo" "modes tempo" "perf tempo"}
+.s-loops{grid-area:loops;display:grid;min-width:0}
+.s-loops .loops,.s-modes .modes{height:100%}
+.s-loops .btn,.s-modes .btn{height:100%;font-size:inherit}
+.s-tempo{grid-area:tempo;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;justify-items:center;gap:8px;min-height:0}
+.s-tempo .key,.s-tempo .sync{width:100%;height:clamp(28px,5vh,52px);font-size:inherit}
+.s-tempo .fader.v{width:clamp(30px,2.6vw,48px)}
+.s-tempo .pv,.s-tempo .range{font-size:clamp(10px,.75vw,13px)}
+.s-jog{grid-area:jog;position:relative;min-height:0}
+.s-jog .stage{position:absolute;inset:0}
+.s-jog .corner{height:clamp(28px,4.5vh,44px);font-size:clamp(10px,.8vw,14px);padding:0 10px}
+.s-jog .nudge{width:clamp(34px,4.5vh,50px);height:clamp(34px,4.5vh,50px);padding:0;font-size:clamp(16px,1.4vw,24px)}
+.desk .jog-center .bp{font-size:clamp(18px,3.4vw,54px)}
+.desk .jog-center small{font-size:clamp(10px,.8vw,14px)}
+.s-modes{grid-area:modes;display:grid;min-width:0}
+.s-perf{grid-area:perf;display:grid;grid-template-columns:clamp(62px,6.5vw,120px) minmax(0,1fr);gap:clamp(6px,.8vw,12px);min-height:0}
+.s-tp{display:grid;grid-template-rows:1fr 1fr;gap:clamp(6px,.8vw,12px)}
+.s-tp .btn{width:100%;height:100%;border-radius:16px;font-size:inherit}
+.s-tp .play svg{width:clamp(18px,1.8vw,30px);height:clamp(18px,1.8vw,30px)}
+.s-pads{display:grid;min-height:0}
+.s-pads .pads{height:100%;grid-auto-rows:auto;grid-template-rows:1fr 1fr;gap:clamp(4px,.6vw,10px)}
+.s-pads .pad{font-size:clamp(10px,.85vw,15px);border-radius:10px}
+.d-mixer{background:var(--panel);border-radius:14px;padding:clamp(8px,1vw,16px);display:grid;
+  grid-template-columns:1fr minmax(0,1.5fr) 1fr;grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"sa fx sb" "fa mt fb" "xf xf xf";gap:clamp(8px,1vw,14px);min-height:0}
+.s-strip[data-deck="A"]{grid-area:sa} .s-strip[data-deck="B"]{grid-area:sb}
+.s-strip .strip{display:grid;justify-items:center;gap:clamp(3px,.7vh,10px)}
+.s-strip .knob{--ks:clamp(32px,3.1vw,56px)}
+.s-strip .knob-wrap,.s-fx .knob-wrap{font-size:clamp(9px,.7vw,13px)}
+.s-fx{grid-area:fx;display:grid;align-content:start;min-width:0}
+.s-fx .fxp{max-width:none}
+.s-fx .knob{--ks:clamp(32px,2.9vw,52px)}
+.s-fx .fxrow,.s-fx .seg{height:clamp(26px,4vh,42px)}
+.s-fx .fxrow{grid-template-columns:clamp(28px,2.4vw,42px) 1fr clamp(28px,2.4vw,42px)}
+.s-fx .fxrow .btn{height:100%}
+.s-fx .btn,.s-fx .fxrow span{font-size:inherit}
+.s-fx .fxon{width:clamp(40px,3.6vw,64px);height:clamp(30px,4.5vh,46px);margin-bottom:clamp(14px,1.4vw,22px)}
+.s-fa{grid-area:fa} .s-fb{grid-area:fb} .s-mt{grid-area:mt} .s-xf{grid-area:xf}
+.s-fa,.s-fb,.s-mt{display:grid;grid-template-rows:minmax(0,1fr);justify-items:center;min-height:0}
+.d-mixer .s-fa .cf,.d-mixer .s-fb .cf,.d-mixer .s-mt .meters,.d-mixer .s-xf .xrow{grid-area:auto;height:auto;align-self:stretch}
+.d-mixer .cf,.d-mixer .meters,.d-mixer .xrow{grid-area:auto}
+.d-mixer .cf{width:clamp(30px,2.6vw,48px)}
+.d-mixer .meter{width:clamp(7px,.6vw,12px)}
+.s-xf .xrow{font-size:inherit}
+.s-xf .fader.h{height:clamp(32px,5vh,52px)}
 
 /* Mixer */
 .mixer{background:var(--panel);border-radius:12px;padding:8px;display:grid;
@@ -311,6 +377,14 @@ canvas{display:block;width:100%;height:100%}
     </div>
   </div>
 </div>
+<div class="desk">
+  <header class="d-top"><div class="d-waves"></div><div class="d-side"><button class="btn fsbtn">Pantalla completa</button></div></header>
+  <section class="d-body">
+    <div class="d-deck" data-deck="A"><div class="s-loops"></div><div class="s-tempo"></div><div class="s-jog"></div><div class="s-modes"></div><div class="s-perf"><div class="s-tp"></div><div class="s-pads"></div></div></div>
+    <div class="d-mixer"><div class="s-strip" data-deck="A"></div><div class="s-fx"></div><div class="s-strip" data-deck="B"></div><div class="s-fa"></div><div class="s-mt"></div><div class="s-fb"></div><div class="s-xf"></div></div>
+    <div class="d-deck" data-deck="B"><div class="s-loops"></div><div class="s-tempo"></div><div class="s-jog"></div><div class="s-modes"></div><div class="s-perf"><div class="s-tp"></div><div class="s-pads"></div></div></div>
+  </section>
+</div>
 <div class="rotate">
   <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="14" width="32" height="20" rx="3"/><path d="M14 8a14 14 0 0 1 20 0M34 8l0 -4M34 8l-4 0"/></svg>
   Gira el teléfono para mezclar
@@ -327,17 +401,19 @@ const RANGES = [0.08, 0.16, 0.5];
 const LOOP_SIZES = [1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8, 16, 32];
 const MODES = [
   { k: 'hot', l: 'Hot cue', c: 'var(--hot)' },
-  { k: 'fx', l: 'Pad FX', c: 'var(--fx)' },
+  { k: 'loop', l: 'Beat loop', c: 'var(--bloop)' },
   { k: 'jump', l: 'Salto', c: 'var(--jump)' },
-  { k: 'smp', l: 'Sampler', c: 'var(--smp)' }
+  { k: 'smp', l: 'Sampler', c: 'var(--smp)' },
+  { k: 'fx', l: 'Pad FX', c: 'var(--fx)' }
 ];
 const PADFX = [
   { l: 'Roll<br>½', roll: .5 }, { l: 'Roll<br>¼', roll: .25 }, { l: 'Roll<br>⅛', roll: .125 }, { l: 'Roll<br>1/16', roll: .0625 },
   { l: 'Eco', k: 'echo' }, { l: 'Filtro<br>HP', k: 'hp' }, { l: 'Filtro<br>LP', k: 'lp' }, { l: 'Freno', k: 'brake' }
 ];
+const BEAT_LOOPS = [.25, .5, 1, 2, 4, 8, 16, 32];
 const JUMPS = [-1, -4, -8, -16, 1, 4, 8, 16];
 const SAMPLE_NAMES = ['Bombo', 'Palma', 'Hat', 'Caja', 'Bocina', 'Láser', 'Subida', 'Sub'];
-const FX_TYPES = ['Eco', 'Reverb', 'Flanger', 'Phaser'];
+const FX_TYPES = ['Eco', 'Delay', 'Reverb', 'Flanger', 'Phaser', 'Trans'];
 const FX_BEATS = [1 / 4, 1 / 2, 3 / 4, 1, 2, 4];
 const WIN = 8, PPS = 100;
 const FORMATS = [['.mp3', 'audio/mpeg'], ['.m4a', 'audio/mp4'], ['.aac', 'audio/aac'], ['.wav', 'audio/wav'],
@@ -509,7 +585,8 @@ class Deck {
     this.an = c.createAnalyser(); this.an.fftSize = 512; this.tbuf = new Float32Array(512);
     this.trim.connect(this.low); this.low.connect(this.mid); this.mid.connect(this.high);
     this.high.connect(this.hp); this.hp.connect(this.lp); this.lp.connect(this.post);
-    this.post.connect(this.fader); this.fader.connect(this.xf); this.xf.connect(bus);
+    this.gate = c.createGain();
+    this.post.connect(this.gate); this.gate.connect(this.fader); this.fader.connect(this.xf); this.xf.connect(bus);
     this.post.connect(this.echoSend); this.echoSend.connect(this.echoDelay);
     this.echoDelay.connect(this.echoFb); this.echoFb.connect(this.echoDelay);
     this.echoDelay.connect(this.echoOut); this.echoOut.connect(this.fader);
@@ -836,7 +913,14 @@ function buildFx() {
   let last = p.in;
   for (let i = 0; i < 4; i++) { const a = c.createBiquadFilter(); a.type = 'allpass'; a.frequency.value = 900; a.Q.value = .7; last.connect(a); p.depth.connect(a.frequency); p.aps.push(a); last = a; }
   last.connect(fx.wet); p.lfo.connect(p.depth); p.lfo.start(); fx.in.connect(p.in);
-  fx.units = [e, r, f, p]; fx.echo = e; fx.fl = f; fx.ph = p;
+  // Delay: repeticiones cortas
+  const dl = { in: g(0), d: c.createDelay(5), fb: g(.15) };
+  fx.in.connect(dl.in); dl.in.connect(dl.d); dl.d.connect(dl.fb); dl.fb.connect(dl.d); dl.d.connect(fx.wet);
+  // Trans: corta el canal al ritmo del beat (actúa sobre el volumen del canal, no suma señal)
+  fx.trans = { osc: c.createOscillator(), dep: decks.map(() => g(0)) };
+  fx.trans.osc.type = 'square'; fx.trans.osc.start();
+  decks.forEach((d, i) => { fx.trans.osc.connect(fx.trans.dep[i]); fx.trans.dep[i].connect(d.gate.gain); });
+  fx.units = [e, dl, r, f, p, null]; fx.echo = e; fx.delay = dl; fx.fl = f; fx.ph = p;
   fx.sendA = g(0); fx.sendB = g(0); fx.sendM = g(0);
   decks[0].xf.connect(fx.sendA); decks[1].xf.connect(fx.sendB); bus.connect(fx.sendM);
   [fx.sendA, fx.sendB, fx.sendM].forEach(s => s.connect(fx.in));
@@ -854,13 +938,20 @@ function applyFx() {
   $$('.seg .btn').forEach(b => b.classList.toggle('on', b.dataset.ch === fxS.ch));
   if (!fx) return;
   const now = ctx.currentTime, t = (p, v) => p.setTargetAtTime(v, now, .015);
-  fx.units.forEach((u, i) => t(u.in.gain, fxS.type === i ? 1 : 0));
+  fx.units.forEach((u, i) => { if (u) t(u.in.gain, fxS.type === i ? 1 : 0); });
   t(fx.sendA.gain, fxS.on && fxS.ch === 'A' ? 1 : 0);
   t(fx.sendB.gain, fxS.on && fxS.ch === 'B' ? 1 : 0);
   t(fx.sendM.gain, fxS.on && fxS.ch === 'M' ? 1 : 0);
-  t(fx.wet.gain, fxS.level * (fxS.type === 1 ? 1.4 : 1));
+  t(fx.wet.gain, fxS.level * (FX_TYPES[fxS.type] === 'Reverb' ? 1.4 : 1));
   const bs = fxBeatSec();
   t(fx.echo.d.delayTime, Math.min(4.9, bs));
+  t(fx.delay.d.delayTime, Math.min(4.9, bs));
+  const tr = FX_TYPES[fxS.type] === 'Trans';
+  fx.trans.osc.frequency.setValueAtTime(1 / bs, now);
+  decks.forEach((d, i) => {
+    const dep = fxS.on && tr && (fxS.ch === 'M' || fxS.ch === d.id) ? fxS.level : 0;
+    t(d.gate.gain, 1 - dep / 2); t(fx.trans.dep[i].gain, dep / 2);
+  });
   fx.fl.lfo.frequency.setValueAtTime(1 / (bs * 4), now);
   fx.ph.lfo.frequency.setValueAtTime(1 / (bs * 4), now);
 }
@@ -1235,6 +1326,7 @@ setInterval(updateMedia, 1000);
 /* =================== Pantalla completa =================== */
 function lockLandscape() { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} }
 document.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;                                          // en PC se usa el botón
   if (e.target.closest && e.target.closest('.load, .libdir, .libfiles')) return;   // no interrumpir el selector de archivos
   const el = document.documentElement;
   if (matchMedia('(display-mode: fullscreen)').matches || document.fullscreenElement || !el.requestFullscreen) { lockLandscape(); return; }
@@ -1354,6 +1446,7 @@ function renderPads(d) {
     let label, color, set = false, lit = d.held.has(i);
     if (d.mode === 'hot') { label = i + 1; color = HC[i]; set = d.hot[i] != null; }
     else if (d.mode === 'fx') { label = PADFX[i].l; color = 'var(--fx)'; }
+    else if (d.mode === 'loop') { const v = BEAT_LOOPS[i]; label = frac(v); color = 'var(--bloop)'; set = !!d.loop && d.loopBeats === v && !d.slip; }
     else if (d.mode === 'jump') { const n = JUMPS[i]; label = n < 0 ? `◀ ${-n}` : `${n} ▶`; color = 'var(--jump)'; }
     else { label = SAMPLE_NAMES[i]; color = 'var(--smp)'; lit = lit || !!smpSrc[i]; }
     if (p._l !== label) { p._l = label; p.innerHTML = label; fit(p); }
@@ -1502,6 +1595,12 @@ function padDown(d, i, btn) {
     else if (f.k === 'brake') d.brake();
     else d.sweep(f.k);
   } else if (d.mode === 'jump') d.jump(JUMPS[i]);
+  else if (d.mode === 'loop') {
+    const v = BEAT_LOOPS[i];
+    if (!d.bpm) toast('El loop necesita el BPM de la pista');
+    else if (d.loop && d.loopBeats === v) d.exitLoop();
+    else { d.loopBeats = v; if (d.loop) d.setLoop(d.loop.start, d.loop.start + d.beat() * v); else d.autoLoop(); }
+  }
   refresh(d);
 }
 function padUp(d, i, btn) {
@@ -1727,7 +1826,49 @@ $$('.smp .btn').forEach(b => b.addEventListener('click', () => {
 }));
 libLoad().then(restoreSession);
 
-new ResizeObserver(layout).observe($('.app'));
+/* Vista de PC: los mismos controles se mueven a la distribución de controlador cuando la pantalla es grande */
+const MOVES = [], SNAP = [];
+(function initDesk() {
+  const add = (node, slot) => { if (node && slot) MOVES.push([node, slot]); };
+  for (const d of decks) {
+    const r = $(`.deck[data-deck="${d.id}"]`), D = sel => $(`.d-deck[data-deck="${d.id}"] ${sel}`);
+    add($(`.wrow[data-deck="${d.id}"]`), $('.d-waves'));
+    ['.key', '.range', '.pf', '.pv', '.sync'].forEach(c => add($(c, r), D('.s-tempo')));
+    add($('.cue', r), D('.s-tp')); add($('.play', r), D('.s-tp'));
+    add($('.stage', r), D('.s-jog'));
+    add($('.loops', r), D('.s-loops'));
+    add($('.modes', r), D('.s-modes'));
+    add($('.pads', r), D('.s-pads'));
+    add($(`.strip[data-deck="${d.id}"]`), $(`.d-mixer .s-strip[data-deck="${d.id}"]`));
+  }
+  add($('.side'), $('.d-side'));
+  add($('.fxp'), $('.s-fx'));
+  add($('.cf[data-deck="A"]'), $('.s-fa')); add($('.meters'), $('.s-mt')); add($('.cf[data-deck="B"]'), $('.s-fb'));
+  add($('.xrow'), $('.s-xf'));
+  const parents = new Set(MOVES.map(([n]) => n.parentNode));
+  parents.forEach(pn => SNAP.push([pn, [...pn.children]]));
+  $('.d-side').insertBefore($('.fsbtn'), null);
+})();
+let isDesk = false;
+function setDesk(on) {
+  if (on === isDesk) return;
+  isDesk = on;
+  decks.forEach(d => openTab(d, null));
+  if (on) MOVES.forEach(([n, slot]) => slot.appendChild(n));
+  else SNAP.forEach(([pn, kids]) => kids.forEach(k => pn.appendChild(k)));
+  if (on) $('.d-side').appendChild($('.fsbtn'));
+  document.body.classList.toggle('dk', on);
+  requestAnimationFrame(layout);
+}
+const wantDesk = () => innerWidth >= 1024 && innerHeight >= 600;
+setDesk(wantDesk());
+addEventListener('resize', () => setDesk(wantDesk()));
+$('.fsbtn').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+});
+document.addEventListener('fullscreenchange', () => { $('.fsbtn').textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa'; fit($('.fsbtn')); });
+new ResizeObserver(layout).observe(document.body);
 layout();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
 requestAnimationFrame(frame);

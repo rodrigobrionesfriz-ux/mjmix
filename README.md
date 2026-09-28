@@ -22,7 +22,13 @@ y abre `http://localhost:8000`. El service worker necesita `localhost` o HTTPS.
 
 La app se usa con el teléfono en horizontal. En tablet funciona en ambas posiciones.
 
-**Distribución**
+**Vista de PC y tablet**
+- En pantallas de al menos 1024 × 600 (computador, tablet horizontal) la app cambia sola a una distribución de controlador de dos canales: formas de onda grandes arriba, y en cada deck la sección de loops, el jog, los modos de pads, Cue y Play junto a los 8 pads, y el pitch con Tono y Sync por el borde exterior.
+- El mixer muestra todo a la vista: Gain, Agudos, Medios, Graves y Filtro por canal, Beat FX al centro, faders de canal con medidores y crossfader.
+- Todo se escala con el tamaño de la ventana. Si achicas la ventana por debajo de ese tamaño, vuelve la vista de teléfono sin perder nada.
+- En PC la pantalla completa se activa con el botón **Pantalla completa** (Esc para salir).
+
+**Distribución (teléfono)**
 - Arriba: la forma de onda de cada deck sobre su lado, con Cargar, y al centro Biblioteca y Automix.
 - Cada deck tiene el jog grande al centro con el BPM, el pitch con Sync y Cue por el borde exterior, y abajo Play con las pestañas **FX, EQ, Loop y Pads**. Cada pestaña abre su panel sobre el jog; toca la misma pestaña para cerrarlo y volver al jog.
 - Los botones **−** y **+** junto al jog frenan o aceleran mientras los mantienes (para cuadrar a oído).
@@ -52,6 +58,7 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 - Mientras está activo, el mismo botón permite **Mezclar ahora** (adelanta el cambio) o **Detener**. Si pausas el deck que suena, Automix espera.
 
 **Modos de pads**
+- **Beat loop**: cada pad arma un loop de ¼, ½, 1, 2, 4, 8, 16 o 32 beats; tocar de nuevo el mismo pad lo suelta.
 - **Hot cue**: 8 puntos por deck. Toca para marcar o saltar; mantén presionado para borrar.
 - **Pad FX**: se activan mientras mantienes el pad. Roll de ½ a 1/16 de beat (al soltar la pista sigue donde habría ido), Eco, Filtro HP, Filtro LP y Freno.
 - **Salto**: fila de arriba retrocede 1, 4, 8 o 16 beats; fila de abajo avanza. Si hay loop activo, el loop se mueve con el salto.
@@ -59,7 +66,7 @@ La app se usa con el teléfono en horizontal. En tablet funciona en ambas posici
 
 **Mixer**
 - Gain, Agudos, Medios, Graves y Filtro por canal (Filtro a la izquierda corta agudos, a la derecha corta graves).
-- **Beat FX**: elige efecto con ◀ ▶ (Eco, Reverb, Flanger, Phaser), ajusta el tiempo con − +, elige canal A, Master o B, y actívalo con On. Nivel controla la intensidad.
+- **Beat FX**: elige efecto con ◀ ▶ (Eco, Delay, Reverb, Flanger, Phaser o Trans, que corta el canal al ritmo), ajusta el tiempo con − +, elige canal A, Master o B, y actívalo con On. Nivel controla la intensidad.
 - **Sampler**: volumen de los sonidos del sampler.
 - Doble toque en cualquier fader o perilla lo devuelve a su posición inicial.
 
